@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OPOSICIÓN TAI</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --success: #27ae60;
+            --error: #e74c3c;
+            --bg: #f4f7f6;
+        }
+
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        
+        .header-info { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 20px; font-weight: bold; position: sticky; top: 0; background: white; z-index: 100; padding-top: 10px;}
+        #timer { color: var(--error); font-size: 1.2rem; }
+
+        #login-section { text-align: center; padding: 20px 0; }
+        
+        /* Bloque de Materias */
+        .subject-block { background: #fdfdfd; border: 2px solid #e1e8ed; border-radius: 12px; padding: 25px; margin-bottom: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
+        .subject-title { color: var(--primary); font-size: 1.5rem; margin-top: 0; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 3px solid var(--secondary); text-align: left; display: flex; align-items: center; gap: 10px;}
+        
+        /* Grid de Temas */
+        .topics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .topic-card { background: var(--secondary); color: white; padding: 15px; border-radius: 8px; cursor: pointer; font-size: 1.1rem; font-weight: bold; transition: 0.3s; border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .topic-card:hover { background: #2980b9; transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
+        .topic-all { background: var(--primary); }
+        .topic-all:hover { background: #1a252f; }
+
+        .btn-main { padding: 12px 25px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1.1rem; font-weight: bold; transition: 0.3s; width: 100%; margin-top: 30px;}
+        .btn-main:hover { background: #1a252f; }
+        .btn-danger { background: var(--error); width: auto; margin-top: 10px; font-size: 0.9rem; padding: 8px 15px;}
+        .btn-danger:hover { background: #c0392b; }
+
+        /* Estilos de las preguntas */
+        .question-block { background: #fff; border: 1px solid #e1e8ed; border-radius: 10px; padding: 25px; margin-bottom: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .question-header { color: var(--primary); border-bottom: 2px solid var(--secondary); padding-bottom: 8px; margin-bottom: 15px; font-size: 1.1rem; }
+        .question-text { font-size: 1.3rem; font-weight: 600; margin-bottom: 20px; }
+        
+        .options-container { display: grid; gap: 12px; margin-top: 20px; }
+        .option-btn { 
+            padding: 15px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; 
+            transition: all 0.2s; background: white; text-align: left; font-size: 1.05rem;
+        }
+        .option-btn:hover:not(:disabled) { background: #f8f9fa; border-color: var(--secondary); }
+        
+        .correct { background-color: var(--success) !important; color: white; border-color: var(--success); }
+        .wrong { background-color: var(--error) !important; color: white; border-color: var(--error); }
+        
+        .explanation { margin-top: 20px; padding: 15px; background: #e8f4fd; border-left: 5px solid var(--secondary); display: none; border-radius: 4px; line-height: 1.5; }
+
+        /* --- Estilos para el Gráfico Donut --- */
+        .gauge-container { display: flex; justify-content: center; margin: 30px 0; }
+        .gauge-outer { 
+            width: 180px; height: 180px; border-radius: 50%; 
+            background: conic-gradient(var(--success) 0%, var(--error) 0); 
+            display: flex; align-items: center; justify-content: center; position: relative; 
+        }
+        .gauge-outer::after { 
+            content: ''; width: 130px; height: 130px; border-radius: 50%; 
+            background: white; position: absolute; 
+        }
+        .gauge-inner { z-index: 1; text-align: center; }
+        #score-text { font-size: 2.5rem; font-weight: bold; color: var(--primary); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="login-section">
+        <h1 style="color: var(--primary);">OPOSICIÓN TAI</h1>
+        <p>Selecciona el bloque que deseas practicar para comenzar directamente.</p>
+        
+        <button class="btn-main btn-danger" onclick="resetProgress()">🗑️ Borrar mi progreso</button>
+        <button class="btn-main" style="background: #e67e22; margin-top: 10px;" onclick="startFailedQuestionsTest()">
+            ❌ Repasar mis fallos (<span id="failed-count">0</span>)
+        </button>
+
+        <div id="subjects-container" style="margin-top: 30px;"></div>
+    </div>
+
+    <div id="test-section" style="display:none;">
+        <div class="header-info">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <button onclick="goBackToMenu()" style="padding: 6px 12px; border: none; border-radius: 6px; background: var(--secondary); color: white; font-weight: bold; cursor: pointer;">🔙 Volver</button>
+                <div> 📚  <span id="display-topic"></span></div>
+            </div>
+            <div id="timer"> ⏱️  00:00</div>
+        </div>
+
+        <div id="questions-list"></div>
+        
+        <button id="finish-btn" class="btn-main" onclick="finishTest()">Finalizar Test ➔</button>
+    </div>
+
+    <div id="results-section" style="text-align: center; display: none; padding: 40px 0;">
+        <h2 style="color: var(--primary);">¡Test Finalizado! 🎉</h2>
+        
+        <div class="gauge-container">
+            <div class="gauge-outer" id="gauge-chart">
+                <div class="gauge-inner">
+                    <span id="score-text">0/0</span>
+                </div>
+            </div>
+        </div>
+
+        <p id="results-detail-text" style="font-size: 1.2rem; margin-bottom: 30px;"></p>
+        <button class="btn-main" onclick="goBackToMenu()">  ↻  Volver al Menú Principal</button>
+    </div>
+</div>
+
+<script>
+    const misPreguntas = [
+        // PARTE 1: OSI y Arquitectura
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 1: Modelo OSI y Enlace", p: "¿Qué es una PDU en el contexto del Modelo OSI?", r: ["Unidad de Datos de Servicio que se transporta vertical y físicamente.", "Un punto de acceso al servicio en la interfaz de capas.", "Unidad de Datos de Protocolo, formato de transporte de información de manera lógica en horizontal.", "El equivalente de una trama en la capa de transporte."], c: "Unidad de Datos de Protocolo, formato de transporte de información de manera lógica en horizontal.", e: "La PDU (Protocol Data Unit) es el formato de transporte lógico en horizontal entre capas homólogas, a diferencia de la SDU que es el transporte vertical." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 1: Modelo OSI y Enlace", p: "¿Cuál es la PDU correspondiente al nivel de Transporte en el Modelo OSI?", r: ["Paquete", "Dato", "Trama", "Segmento"], c: "Segmento", e: "En la capa de Transporte, la unidad de datos se denomina Segmento. En Red es Paquete, y en Enlace es Trama." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 1: Modelo OSI y Enlace", p: "¿A qué protocolo de la arquitectura TCP/IP equivale el estándar X.400 del Modelo OSI?", r: ["FTP", "SMTP", "LDAP", "SNMP"], c: "SMTP", e: "El estándar X.400 del Modelo OSI equivale a SMTP (Simple Mail Transfer Protocol) para el envío de correo electrónico en TCP/IP." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 1: Modelo OSI y Enlace", p: "¿Qué capa del Modelo OSI se encarga del transporte fiable 'host-to-host'?", r: ["Nivel de Sesión", "Nivel de Transporte", "Nivel de Red", "Nivel de Enlace"], c: "Nivel de Transporte", e: "La capa de Transporte (Nivel 4) es la encargada de la conexión de extremo a extremo y el control del flujo de datos de forma fiable." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 1: Modelo OSI y Enlace", p: "¿Qué puerto utiliza por defecto el protocolo RDP (Escritorio Remoto)?", r: ["3389", "22", "2049", "110"], c: "3389", e: "RDP (Remote Desktop Protocol) utiliza el puerto TCP 3389 para conexiones de escritorio remoto." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 1: Modelo OSI y Enlace", p: "¿Qué protocolo se utiliza comúnmente para el acceso remoto a ficheros compartidos en un entorno local (LAN) con Windows?", r: ["NFS", "BGP", "SMB/CIFS", "FTP"], c: "SMB/CIFS", e: "SMB/CIFS es el protocolo utilizado para compartir archivos e impresoras en redes Windows (ej. \\\\SERVIDOR\\INFORMES)." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 1: Modelo OSI y Enlace", p: "¿Cuál es el propósito principal del protocolo IGMP?", r: ["Traducir direcciones IP a direcciones físicas MAC.", "Sincronizar los relojes de los ordenadores de la red.", "Encaminar tráfico exterior entre proveedores de Internet.", "Solicitar entrar en un grupo multicast o abandonarlo."], c: "Solicitar entrar en un grupo multicast o abandonarlo.", e: "IGMP (Internet Group Management Protocol) se usa para que los hosts se suscriban o abandonen grupos Multicast." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 1: Modelo OSI y Enlace", p: "¿Qué puertos utiliza el protocolo DHCP para asignar configuraciones dinámicas de host?", r: ["53 y 54", "67 y 68", "20 y 21", "161 y 162"], c: "67 y 68", e: "DHCP utiliza los puertos UDP 67 (servidor) y 68 (cliente) para la configuración dinámica en la red." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 1: Modelo OSI y Enlace", p: "¿Qué protocolo de enrutamiento actúa como protocolo de tipo 'exterior' entre sistemas autónomos (proveedores de internet)?", r: ["BGP", "OSPF", "RIP", "IGRP"], c: "BGP", e: "BGP (Border Gateway Protocol) es el protocolo de enrutamiento exterior usado para interconectar grandes proveedores de Internet (usa el puerto TCP 179)." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 1: Modelo OSI y Enlace", p: "El protocolo NTP (Network Time Protocol) sincroniza la hora del ordenador. ¿Qué puerto utiliza?", r: ["25", "110", "123", "520"], c: "123", e: "NTP utiliza el puerto 123 para sincronizar la hora y la fecha de los sistemas en red." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 1: Modelo OSI y Enlace", p: "Dentro del nivel de enlace, ¿qué subnivel se encarga de controlar cómo los dispositivos obtienen permiso para transmitir en el medio físico?", r: ["ARP", "LLC", "IP", "MAC"], c: "MAC", e: "El subnivel MAC (Media Access Control) controla el acceso al medio físico, mientras que el LLC encapsula protocolos de la capa de red." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 1: Modelo OSI y Enlace", p: "¿Qué dirección MAC de destino utiliza el protocolo ARP para averiguar la dirección física asociada a una IP?", r: ["00:00:00:00:00:00", "255.255.255.255", "FF:FF:FF:FF:FF:FF", "01:00:5E:00:00:01"], c: "FF:FF:FF:FF:FF:FF", e: "ARP lanza una petición mediante broadcast MAC, representada por FF:FF:FF:FF:FF:FF para que la escuchen todos los equipos del segmento." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 1: Modelo OSI y Enlace", p: "¿Qué protocolo del Nivel 2 proporciona control de flujo y detección de errores en conexiones seriales o redes de área extensa (WAN)?", r: ["HDLC", "STP", "LLC", "VLAN"], c: "HDLC", e: "HDLC (High-Level Data Link Control) es un protocolo de Nivel 2 que define control de flujo, detección de errores y modos de operación en conexiones seriales y WAN." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 1: Modelo OSI y Enlace", p: "Dentro de los protocolos para evitar bucles en redes, ¿qué estándar IEEE define a RSTP (Rapid Spanning Tree Protocol)?", r: ["802.1D", "802.1s", "802.1aq", "802.1w"], c: "802.1w", e: "RSTP se define en 802.1w. El STP original es 802.1D, el múltiple (MSTP) es 802.1s y el puenteo de ruta más corta (SPB) es 802.1aq." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 1: Modelo OSI y Enlace", p: "¿Qué estándar se asocia con el etiquetado para definir y aislar de forma lógica zonas de la red mediante VLANs?", r: ["802.11", "802.1w", "802.1Q", "802.3"], c: "802.1Q", e: "El estándar IEEE 802.1Q es el protocolo principal utilizado para el etiquetado de redes de área local virtuales (VLAN)." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 1: Modelo OSI y Enlace", p: "En la capa 7 de OSI, el protocolo CMIS/CMIP tiene una funcionalidad equivalente en TCP/IP al protocolo:", r: ["FTP", "LDAP", "SNMP", "SMTP"], c: "SNMP", e: "CMIS/CMIP se utiliza para la gestión de redes en OSI, lo que equivale a SNMP (Simple Network Management Protocol) en la arquitectura TCP/IP." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 1: Modelo OSI y Enlace", p: "¿Qué puerto es utilizado por el protocolo SSH para manejar remotamente de forma segura una máquina?", r: ["22", "21", "23", "25"], c: "22", e: "SSH (Secure Shell) utiliza el puerto TCP 22. El 21 es FTP, el 23 es Telnet y el 25 es SMTP." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 1: Modelo OSI y Enlace", p: "¿Qué protocolos son fundamentales para la señalización e inicio de llamadas en redes de Voz sobre IP (VoIP)?", r: ["NFS y SMB", "H.323 y SIP", "RDP y VNC", "IGMP y PIM"], c: "H.323 y SIP", e: "H.323 y SIP son protocolos de señalización specifically diseñados para establecer, mantener y finalizar sesiones de comunicación en tiempo real (VoIP)." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 1: Modelo OSI y Enlace", p: "Según el estándar HDLC, ¿cuáles son los modos de operación permitidos?", r: ["Simplex, Half-Duplex y Full-Duplex.", "CSMA/CD y CSMA/CA.", "Normal, balanceado síncrono o asíncrono.", "Estación primaria, secundaria y combinada."], c: "Normal, balanceado síncrono o asíncrono.", e: "HDLC define tres modos de operación lógicos: modo normal (NRM), modo asíncrono (ARM) y modo balanceado asíncrono (ABM)." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 1: Modelo OSI y Enlace", p: "¿Qué significa la sigla SPB (802.1aq) implementada para mejorar el enrutamiento en centros de datos modernos?", r: ["Secure Packet Broadcasting", "Spanning Protocol Bridge", "Shortest Path Bridging", "Simple Port Bridging"], c: "Shortest Path Bridging", e: "SPB (Shortest Path Bridging) busca encontrar siempre la ruta más corta entre dispositivos, mejorando la eficiencia sobre los protocolos Spanning Tree tradicionales." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 1: Modelo OSI y Enlace", p: "¿Qué nombre reciben las unidades de datos (PDU) que intercambian los switches para gestionar la topología en los protocolos Spanning Tree?", r: ["Segmentos TCP", "BPDU (Bridge Protocol Data Unit)", "Tramas Multicast ARP", "Paquetes de Estado de Enlace (LSP)"], c: "BPDU (Bridge Protocol Data Unit)", e: "Los switches intercambian tramas especiales llamadas BPDU para compartir información de topología, elegir el puente raíz y evitar bucles en la red." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 1: Modelo OSI y Enlace", p: "En el Modelo OSI, los protocolos TP0, TP1, TP2, TP3 y TP4, ¿a qué capa pertenecen?", r: ["Capa 3 (Red)", "Capa 7 (Aplicación)", "Capa 2 (Enlace)", "Capa 4 (Transporte)"], c: "Capa 4 (Transporte)", e: "TP0 a TP4 son las clases del protocolo de transporte OSI, donde TP0 y TP2 no son fiables, siendo TP4 el más parecido a TCP garantizando alta fiabilidad." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 1: Modelo OSI y Enlace", p: "¿Qué protocolo de enlace suele asociarse casi siempre junto a HDLC como representante histórico del Nivel 2 en el modelo OSI?", r: ["LAPB", "CLNP", "CONS", "ICMP"], c: "LAPB", e: "LAPB (Link Access Procedure, Balanced) y HDLC son los dos protocolos canónicos del Nivel 2 definidos formalmente en las arquitecturas clásicas de OSI/X.25." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 1: Modelo OSI y Enlace", p: "De acuerdo a la clasificación de la IANA, ¿cuál es el rango de puertos que se consideran 'Bien conocidos' o de Sistema (Well Known Ports)?", r: ["0 a 1023", "1024 a 49151", "49152 a 65535", "0 a 65535"], c: "0 a 1023", e: "Los System Ports o Well Known Ports ocupan del 0 al 1023, registrados para los servicios fundamentales (HTTP, FTP, SSH, etc.)." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 1: Modelo OSI y Enlace", p: "¿Qué protocolo y puerto se utiliza habitualmente en empresas para acceder a sistemas de ficheros en red de forma remota, común en entornos UNIX?", r: ["FTP (Puerto 21)", "SMB/CIFS (Puerto 445)", "NFS (Puerto 2049)", "RDP (Puerto 3389)"], c: "NFS (Puerto 2049)", e: "NFS (Network File System) permite ver y administrar ficheros montados de otra máquina como si fueran locales, y usa típicamente el puerto 2049." },
+
+        // PARTE 2: IPv4 y Subnetting
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 2: IPv4 y Subnetting", p: "¿Cuál es el tamaño mínimo y máximo de la cabecera de un datagrama IPv4?", r: ["10 bytes mínimo y 40 bytes máximo.", "20 bytes mínimo y 60 bytes máximo.", "32 bytes mínimo y 64 bytes máximo.", "40 bytes mínimo y 100 bytes máximo."], c: "20 bytes mínimo y 60 bytes máximo.", e: "La cabecera IPv4 tiene un tamaño mínimo de 20 bytes (sin opciones) y puede llegar hasta un máximo de 60 bytes si se incluyen opciones." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 2: IPv4 y Subnetting", p: "El tamaño máximo de un datagrama IPv4 viene limitado por el campo 'Total Length' de 16 bits. ¿Cuál es ese tamaño máximo total (cabecera + datos)?", r: ["1500 bytes", "32768 bytes", "65535 bytes", "1024 bytes"], c: "65535 bytes", e: "Al tener 16 bits para el campo Total Length, el valor máximo es 2^16 - 1, lo que da 65.535 bytes como tamaño máximo del datagrama completo." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 2: IPv4 y Subnetting", p: "Si un router recibe un paquete más grande que la MTU de su interfaz de salida y el paquete tiene el flag 'DF' (Don't Fragment) activado (1), ¿qué hace el router?", r: ["Fragmenta el paquete ignorando el flag para asegurar la entrega.", "Descarta el paquete y envía un mensaje ICMP 'Fragmentation Needed' al origen.", "Envía el paquete por una ruta alternativa que soporte esa MTU.", "Descarta el paquete sin enviar ninguna notificación."], c: "Descarta el paquete y envía un mensaje ICMP 'Fragmentation Needed' al origen.", e: "Si el flag DF está en 1 (No Fragmentar) y el paquete supera la MTU, el router no puede fragmentarlo, por lo que lo descarta y avisa al origen con un ICMP de que necesita fragmentar." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 2: IPv4 y Subnetting", p: "¿Para qué sirve el campo TTL (Time to Live) en la cabecera IPv4?", r: ["Define el tiempo en segundos que el paquete esperará en una cola antes de procesarse.", "Asegura la entrega del paquete al destino cifrando los datos.", "Indica el número máximo de saltos por routers que puede dar el paquete para evitar bucles infinitos.", "Establece la prioridad del tráfico para la Calidad de Servicio (QoS)."], c: "Indica el número máximo de saltos por routers que puede dar el paquete para evitar bucles infinitos.", e: "El TTL indica el número máximo de saltos. Cada router le resta 1. Si llega a 0, el router descarta el paquete y notifica con un ICMP 'Tiempo Excedido' (Time Exceeded), previniendo bucles." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 2: IPv4 y Subnetting", p: "¿Qué valor en el campo 'Protocol' de la cabecera IPv4 indica que el segmento transportado es del protocolo TCP?", r: ["1", "6", "17", "89"], c: "6", e: "En el campo Protocol de IPv4: 1 es ICMP, 6 es TCP, 17 es UDP, 50 es ESP y 89 es OSPF." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 2: IPv4 y Subnetting", p: "El antiguo campo TOS (Type of Service) de IPv4 se divide actualmente en DSCP (6 bits) y ECN (2 bits). ¿Para qué sirve el ECN?", r: ["Para cifrar el contenido del payload IP.", "Para notificar de forma explícita la congestión de la red sin tener que destruir/descartar los paquetes.", "Para priorizar el tráfico de VoIP sobre las descargas.", "Para identificar la versión del protocolo IP que se está utilizando."], c: "Para notificar de forma explícita la congestión de la red sin tener que destruir/descartar los paquetes.", e: "ECN (Explicit Congestion Notification) utiliza 2 bits para avisar a los extremos de que hay congestión en la red, evitando que los routers tengan que descartar paquetes para indicarlo." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 2: IPv4 y Subnetting", p: "Según el direccionamiento Classful (con clases), ¿a qué rango pertenece el primer octeto de una dirección de Clase B?", r: ["0 - 127", "128 - 191", "192 - 223", "224 - 239"], c: "128 - 191", e: "Clase A: 0-127. Clase B: 128-191. Clase C: 192-223. Clase D (Multicast): 224-239." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 2: IPv4 y Subnetting", p: "¿Cuál de los siguientes rangos se corresponde con las direcciones IP de uso privado establecidas para la Clase C?", r: ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "169.254.0.0/16"], c: "192.168.0.0/16", e: "El rango privado para Clase C es 192.168.0.0/16. El de Clase A es 10.0.0.0/8 y el de Clase B es 172.16.0.0/12." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 2: IPv4 y Subnetting", p: "Si el servidor DHCP de una red falla y un equipo Windows configura automáticamente su IP utilizando el mecanismo APIPA, ¿qué dirección se asignará?", r: ["127.0.0.1", "192.168.1.100", "Una dirección del bloque 169.254.0.0/16", "0.0.0.0"], c: "Una dirección del bloque 169.254.0.0/16", e: "APIPA (Automatic Private IP Addressing) utiliza el bloque reservado 169.254.x.x cuando un host no puede obtener respuesta de un servidor DHCP." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 2: IPv4 y Subnetting", p: "¿Qué dirección IPv4 está reservada para hacer pruebas de 'loopback' (bucle local de la propia máquina)?", r: ["0.0.0.0", "127.0.0.0", "255.255.255.255", "192.168.0.1"], c: "127.0.0.0", e: "El rango 127.0.0.0/8 (habitualmente 127.0.0.1) se utiliza como dirección de loopback para probar la propia pila TCP/IP local." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 2: IPv4 y Subnetting", p: "En el cálculo de subredes, ¿cómo se averigua el número de hosts útiles que pueden conectarse en una subred si la porción de host tiene 'n' bits?", r: ["2^n", "2^n - 1", "2^n - 2", "2^n + 2"], c: "2^n - 2", e: "La fórmula es (2^n) - 2. Se restan 2 porque la primera IP de las combinaciones está reservada para identificar la propia 'Dirección de Red' y la última para el 'Broadcast' de la subred." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 2: IPv4 y Subnetting", p: "[PRÁCTICA] Dada una red de Clase C, si aplicamos la máscara de subred 255.255.255.192 (/26), ¿cuántos hosts útiles tendremos por cada subred?", r: ["64 hosts", "62 hosts", "128 hosts", "30 hosts"], c: "62 hosts", e: "La máscara /26 significa 26 bits para red y 6 bits para host (32-26). (2^6) = 64 IPs totales. Restando la de red y broadcast quedan 64 - 2 = 62 hosts útiles." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 2: IPv4 y Subnetting", p: "[PRÁCTICA] Tenemos el equipo con la IP 192.168.10.50 y máscara /27. ¿Cuál es su 'Dirección de Red'?", r: ["192.168.10.0", "192.168.10.32", "192.168.10.48", "192.168.10.64"], c: "192.168.10.32", e: "La máscara /27 deja 5 bits para host (tamaño de bloque 32). Las subredes saltan de 32 en 32: .0, .32, .64, .96... El host .50 se encuentra en la subred que empieza en 192.168.10.32." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 2: IPv4 y Subnetting", p: "[PRÁCTICA] En base a la pregunta anterior (IP 192.168.10.50 con máscara /27), ¿cuál sería la 'Dirección de Broadcast' de su subred?", r: ["192.168.10.63", "192.168.10.255", "192.168.10.31", "192.168.10.64"], c: "192.168.10.63", e: "Si la subred actual empieza en .32 y la siguiente empieza en .64, la dirección de broadcast de la subred actual es la IP justo anterior a la siguiente red: 192.168.10.63." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 2: IPv4 y Subnetting", p: "[PRÁCTICA] ¿Cuántas subredes obtendremos si tomamos una red base de Clase B (172.16.0.0) y usamos una máscara 255.255.240.0?", r: ["4 subredes", "8 subredes", "16 subredes", "32 subredes"], c: "16 subredes", e: "La Clase B original usa 16 bits (255.255.0.0). La máscara .240.0 equivale a 11110000.00000000. Hemos tomado prestados 4 bits (los '1's del tercer octeto). Número de subredes = 2^4 = 16." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 2: IPv4 y Subnetting", p: "[PRÁCTICA] ¿A qué notación CIDR corresponde la máscara de subred 255.255.255.224?", r: ["/26", "/27", "/28", "/29"], c: "/27", e: "En binario, 224 es 11100000 (3 bits a 1). Sumados a los 24 bits de los tres primeros octetos (255.255.255), obtenemos 24 + 3 = 27, por lo tanto, es un prefijo /27." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 2: IPv4 y Subnetting", p: "En el mundo del direccionamiento IP, ¿qué caracteriza conceptualmente al protocolo VLSM (Variable Length Subnet Mask)?", r: ["Divide la red en bloques de tamaño obligatoriamente fijo, perdiendo muchas direcciones IPs.", "Solo puede ser utilizado por protocolos de routing antiguos como RIPv1.", "Permite aplicar máscaras de diferente longitud dentro de una misma red, creando subredes de distintos tamaños para no desperdiciar IPs.", "Es una técnica para traducir direcciones privadas a públicas."], c: "Permite aplicar máscaras de diferente longitud dentro de una misma red, creando subredes de distintos tamaños para no desperdiciar IPs.", e: "VLSM es la técnica que permite que una misma red principal se divida en subredes con máscaras diferentes (ej. una /24, otra /25, otra /30 para enlaces), aprovechando mucho mejor el espacio que FLSM." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 2: IPv4 y Subnetting", p: "¿Qué técnica, también conocida como 'Agregación de Rutas', se usa en routers y redes grandes para fusionar varias subredes contiguas acortando la longitud de la máscara de red?", r: ["Subnetting", "Supernetting", "Spoofing", "NAT"], c: "Supernetting", e: "El Supernetting o sumarización acorta los bits de la máscara (hace la máscara más pequeña, ej. de /24 a /22) para juntar varias redes contiguas en una sola ruta, reduciendo el tamaño de las tablas de enrutamiento." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 2: IPv4 y Subnetting", p: "[PRÁCTICA] Si hacemos Supernetting agrupando las cuatro redes 192.168.0.0/24, 192.168.1.0/24, 192.168.2.0/24 y 192.168.3.0/24, ¿cuál será la ruta resumida?", r: ["192.168.0.0/21", "192.168.0.0/22", "192.168.0.0/23", "192.168.0.0/20"], c: "192.168.0.0/22", e: "Al agrupar 4 redes /24 contiguas, restamos 2 bits a la máscara (porque 2^2 = 4). Por tanto, la nueva máscara es 24 - 2 = 22. La red resultante es 192.168.0.0/22." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 2: IPv4 y Subnetting", p: "¿En qué consiste la técnica SNAT (Source NAT) dinámica o 'IP Masquerading'?", r: ["Cambia la IP de destino de un paquete entrante a una IP interna.", "Mapea direcciones MAC locales a IPs públicas en la nube.", "Reemplaza la dirección IP privada de origen de un equipo interno por la dirección IP pública del router/pasarela al salir a Internet.", "Reenvía una petición HTTP de un puerto a otro distinto de manera transparente."], c: "Reemplaza la dirección IP privada de origen de un equipo interno por la dirección IP pública del router/pasarela al salir a Internet.", e: "El SNAT o enmascaramiento permite que todos los dispositivos con IP privada de una LAN salgan a Internet usando la misma IP pública del router, sustituyendo la IP origen en los paquetes de salida." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 2: IPv4 y Subnetting", p: "¿Qué tipo específico de NAT permite modificar los números de puertos (origen o destino) logrando que múltiples peticiones compartan una sola IP pública?", r: ["DNAT", "PAT (Port Address Translation)", "Static NAT", "1:1 NAT"], c: "PAT (Port Address Translation)", e: "PAT (también conocido como NAT Overload) realiza la traducción a nivel de puerto para identificar individualmente las conexiones de distintos equipos locales usando una única IP pública." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 2: IPv4 y Subnetting", p: "Al diseñar una red Classless Inter-Domain Routing (CIDR), un proveedor asigna el prefijo /30 a los enlaces de router a router ('punto a punto'). ¿Cuántas IPs útiles deja un /30?", r: ["4", "2", "6", "0"], c: "2", e: "Un /30 deja 2 bits para host (32 - 30). Las IPs totales son 2^2 = 4. Restando red y broadcast, quedan exactamente 2 IPs útiles, perfectas para un enlace directo entre 2 routers." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 2: IPv4 y Subnetting", p: "[PRÁCTICA] ¿Cuál de las siguientes máscaras de red representaría el equivalente decimal de un prefijo /22?", r: ["255.255.252.0", "255.255.248.0", "255.255.254.0", "255.255.224.0"], c: "255.255.252.0", e: "El /22 indica 22 bits a 1: 11111111.11111111.11111100.00000000. El tercer octeto (11111100) en decimal equivale a 128+64+32+16+8+4 = 252. Por tanto es 255.255.252.0." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 2: IPv4 y Subnetting", p: "En el contexto de la capa de Red de TCP/IP, ¿qué afirmación sobre ICMPv4 (Internet Control Message Protocol) es CIERTA?", r: ["Viaja encapsulado sobre TCP usando el puerto 80.", "Se utiliza exclusivamente para asignar IPs de forma estática.", "Viaja encapsulado directamente sobre IP, con el valor 1 en el campo 'Protocol'.", "Viaja encapsulado sobre UDP usando el puerto 53."], c: "Viaja encapsulado directamente sobre IP, con el valor 1 en el campo 'Protocol'.", e: "ICMP viaja sobre IP (campo Protocol 1). No usa puertos (no es de la capa de transporte TCP/UDP), y su función es reportar mensajes de error y diagnóstico (ej. Ping, Traceroute)." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 2: IPv4 y Subnetting", p: "[PRÁCTICA] Dada la red 10.0.0.0 /23, ¿cuál será el rango de direcciones IP útiles asignables a los hosts?", r: ["10.0.0.1 hasta 10.0.0.254", "10.0.0.1 hasta 10.0.1.254", "10.0.0.1 hasta 10.0.3.254", "10.0.0.1 hasta 10.0.255.254"], c: "10.0.0.1 hasta 10.0.1.254", e: "Una máscara /23 significa 9 bits de host (bloques de 512 IPs, lo que son 2 octetos del grupo de .256). La red es 10.0.0.0, la siguiente red es 10.0.2.0. Por tanto, el broadcast es 10.0.1.255 y el rango útil es desde la 10.0.0.1 hasta la 10.0.1.254." },
+
+        // PARTE 3: IPv6 y Enrutamiento
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 3: IPv6 y Enrutamiento", p: "¿Cuál es el tamaño total en bits de una dirección IPv6?", r: ["32 bits", "64 bits", "128 bits", "256 bits"], c: "128 bits", e: "Las direcciones IPv6 tienen una longitud de 128 bits, representados habitualmente en 8 grupos hexadecimales de 4 caracteres." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 3: IPv6 y Enrutamiento", p: "A diferencia de IPv4, ¿qué ocurre con la fragmentación de datagramas en IPv6?", r: ["Se realiza exclusivamente en los routers intermedios.", "No existe la fragmentación en IPv6.", "Solo puede ser realizada por el nodo de origen, nunca por los routers intermedios.", "Se delega completamente a la capa de enlace."], c: "Solo puede ser realizada por el nodo de origen, nunca por los routers intermedios.", e: "En IPv6, los routers no fragmentan los paquetes. Si un paquete es demasiado grande, se descarta y se avisa al origen para que lo envíe fragmentado usando cabeceras de extensión." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 3: IPv6 y Enrutamiento", p: "¿Qué prefijo identifica a las direcciones IPv6 'Link-Local' (solo enrutables en el segmento local y vecinos inmediatos)?", r: ["2000::/3", "FE80::/10", "FC00::/7", "FF00::/8"], c: "FE80::/10", e: "El prefijo FE80::/10 se utiliza para direcciones Link-Local, que permiten la comunicación entre nodos del mismo enlace físico sin necesidad de un router." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 3: IPv6 y Enrutamiento", p: "¿Qué rango o prefijo de IPv6 es el equivalente a las direcciones públicas de Internet (Global Unicast)?", r: ["2000::/3", "FE80::/10", "FC00::/7", "::1/128"], c: "2000::/3", e: "El bloque 2000::/3 abarca las direcciones Global Unicast, que son las direcciones públicas enrutables en todo el Internet IPv6." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 3: IPv6 y Enrutamiento", p: "En IPv6 desaparece el concepto de 'Broadcast' clásico. ¿Qué mecanismo se utiliza en su lugar para funciones similares?", r: ["Unicast direccional", "Multicast y grupos Solicited-Node", "Anycast estricto", "VLAN Tagging"], c: "Multicast y grupos Solicited-Node", e: "En IPv6 no hay broadcast. Se utilizan grupos Multicast específicos (como Solicited-Node) para que el tráfico llegue solo a los nodos interesados." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 3: IPv6 y Enrutamiento", p: "¿Qué método de autoconfiguración permite a un host IPv6 generar los 64 bits de su identificador de interfaz partiendo de su dirección MAC?", r: ["Algoritmo Dijkstra", "Algoritmo EUI-64", "SLAAC", "DHCPv6"], c: "Algoritmo EUI-64", e: "El EUI-64 divide la MAC (48 bits) por la mitad, inserta FFFE en el centro y, finalmente, invierte el séptimo bit para formar los 64 bits de host." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 3: IPv6 y Enrutamiento", p: "En IPv6, ¿qué protocolo sustituye al antiguo ARP de IPv4 para la resolución de direcciones MAC?", r: ["NDP (Neighbor Discovery Protocol)", "ICMPv6", "IGMPv3", "RARP"], c: "NDP (Neighbor Discovery Protocol)", e: "NDP funciona sobre ICMPv6 y se encarga de descubrir vecinos, autoconfiguración (SLAAC) y resolución de direcciones, sustituyendo al ARP basado en broadcast." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 3: IPv6 y Enrutamiento", p: "Dentro del protocolo NDP, ¿qué mensaje envía un enrutador para anunciar su presencia y proporcionar el prefijo de red a los hosts?", r: ["NS (Neighbor Solicitation)", "NA (Neighbor Advertisement)", "RA (Router Advertisement)", "RS (Router Solicitation)"], c: "RA (Router Advertisement)", e: "El mensaje RA (Router Advertisement) lo envían los routers periódicamente o en respuesta a un RS, diciendo: 'Aquí estoy, este es el prefijo de la red'." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 3: IPv6 y Enrutamiento", p: "Si un host IPv6 acaba de conectarse y necesita encontrar un router inmediatamente para configurarse, ¿qué mensaje NDP envía?", r: ["RS (Router Solicitation)", "RA (Router Advertisement)", "NS (Neighbor Solicitation)", "NA (Neighbor Advertisement)"], c: "RS (Router Solicitation)", e: "El host envía un RS para solicitar de forma activa que cualquier router presente en el enlace responda con un RA." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 3: IPv6 y Enrutamiento", p: "¿Qué técnica de transición transparente envía paquetes IPv6 encapsulados sobre una infraestructura de red IPv4 usando el prefijo 2002::/16?", r: ["Dual-Stack", "NAT64", "Método 6to4 (Túnel automático)", "ISATAP"], c: "Método 6to4 (Túnel automático)", e: "El método 6to4 concatena el prefijo reservado 2002::/16 con la dirección IPv4 pública del router de frontera para formar un túnel automático." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 3: IPv6 y Enrutamiento", p: "En enrutamiento, ¿cuál de los siguientes es un protocolo de tipo 'Estado de Enlace' (Link-State)?", r: ["RIPv1", "RIPv2", "EIGRP", "OSPF"], c: "OSPF", e: "OSPF e IS-IS son protocolos de Estado de Enlace (obtienen una foto topológica completa). RIP e IGRP son protocolos de Vector Distancia." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 3: IPv6 y Enrutamiento", p: "¿Qué caracteriza principalmente a un protocolo de enrutamiento Vector-Distancia?", r: ["Intercambia información de la red únicamente con sus routers vecinos directos.", "Calcula la ruta más corta trazando un mapa completo (grafo) de toda la red.", "Solo se utiliza para conectar Sistemas Autónomos diferentes.", "Se basa exclusivamente en el estado físico del cableado."], c: "Intercambia información de la red únicamente con sus routers vecinos directos.", e: "Los protocolos Vector Distancia operan intercambiando tablas de enrutamiento solo con los vecinos directamente conectados, basándose en el número de saltos." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 3: IPv6 y Enrutamiento", p: "¿Qué protocolo de enrutamiento exterior (EGP) es el estándar de facto usado entre los distintos proveedores de Internet (Sistemas Autónomos)?", r: ["OSPF", "IS-IS", "BGP", "RIPv2"], c: "BGP", e: "BGP (Border Gateway Protocol) es el protocolo de enrutamiento exterior que sostiene las interconexiones a nivel global en Internet." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 3: IPv6 y Enrutamiento", p: "¿Cuál es el número máximo de saltos (hop count) permitido como métrica en el protocolo RIP antes de considerar una red inalcanzable?", r: ["15 saltos", "16 saltos", "32 saltos", "255 saltos"], c: "15 saltos", e: "En RIP, el salto número 16 se considera inalcanzable (infinito), limitando su uso a redes de tamaño pequeño a mediano." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 3: IPv6 y Enrutamiento", p: "¿Qué gran diferencia existe en la forma en que RIPv1 y RIPv2 envían sus tablas de enrutamiento?", r: ["RIPv1 usa el puerto 80 y RIPv2 usa el puerto 443.", "RIPv1 usa broadcast y RIPv2 usa multicast (224.0.0.9).", "RIPv1 es de estado de enlace y RIPv2 es vector distancia.", "No existe diferencia en la transmisión, solo en el cifrado."], c: "RIPv1 usa broadcast y RIPv2 usa multicast (224.0.0.9).", e: "RIPv2 mejoró la eficiencia y seguridad enviando sus actualizaciones por multicast en lugar de saturar la red con broadcast, además de soportar VLSM (es Classless)." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 3: IPv6 y Enrutamiento", p: "¿Qué algoritmo matemático emplea OSPF para calcular los caminos más cortos en la topología de la red?", r: ["Algoritmo de Bellman-Ford", "Algoritmo de Dijkstra", "Algoritmo EUI-64", "Algoritmo Diffie-Hellman"], c: "Algoritmo de Dijkstra", e: "OSPF utiliza el algoritmo de Dijkstra (Open Shortest Path First) para procesar el árbol de la topología completa y encontrar el camino mínimo." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 3: IPv6 y Enrutamiento", p: "En OSPF, la arquitectura de red se puede dividir en zonas lógicas para ser más eficiente. ¿Cómo se denomina el área principal que interconecta a todas las demás?", r: ["Area Cero (Backbone)", "Stub Area", "Autonomous System", "Root Bridge"], c: "Area Cero (Backbone)", e: "El Área 0 o Backbone es la columna vertebral de OSPF; todas las demás áreas deben conectarse físicamente o lógicamente a ella." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 3: IPv6 y Enrutamiento", p: "¿Cómo transporta OSPF su carga útil o mensajes PDU entre routers?", r: ["Encapsulados en UDP mediante el puerto 520.", "Encapsulados en TCP mediante el puerto 179.", "Encapsulados directamente sobre el nivel IP sin usar TCP/UDP.", "A través de peticiones ICMP Echo Request."], c: "Encapsulados directamente sobre el nivel IP sin usar TCP/UDP.", e: "A diferencia de RIP (que usa UDP) o BGP (que usa TCP), OSPF corre directamente sobre la capa IP indicando el protocolo 89 y utilizando las IPs multicast 224.0.0.5 y .6." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 3: IPv6 y Enrutamiento", p: "¿Qué puerto de la capa de transporte requiere el protocolo de enrutamiento exterior BGP para funcionar?", r: ["UDP 520", "TCP 179", "TCP 22", "UDP 67"], c: "TCP 179", e: "BGP requiere establecer una conexión fiable (orientada a conexión) con los routers vecinos de otros sistemas autónomos, por lo que usa el puerto TCP 179." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 3: IPv6 y Enrutamiento", p: "¿Cuál es la función principal del protocolo ICMPv4?", r: ["Proporcionar transporte fiable garantizando el control de flujo.", "Asignar direcciones IPv4 dinámicas de forma automatizada.", "Enviar mensajes de control y reportar errores entre dispositivos.", "Traducir nombres de dominio a direcciones IP."], c: "Enviar mensajes de control y reportar errores entre dispositivos.", e: "ICMPv4 (Internet Control Message Protocol) es vital para el diagnóstico, reportando errores de inalcanzabilidad, tiempo excedido y ecos (Ping)." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 3: IPv6 y Enrutamiento", p: "¿Qué tipo de mensaje ICMPv4 se envía al utilizar el comando clásico 'Ping'?", r: ["Destination Unreachable", "Time Exceeded", "Echo Request / Echo Reply", "Fragmentation Needed"], c: "Echo Request / Echo Reply", e: "El comando Ping emite mensajes tipo 8 (Echo Request) y espera recibir mensajes tipo 0 (Echo Reply) para verificar la conectividad con otro nodo." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 3: IPv6 y Enrutamiento", p: "Cuando ejecutamos el comando 'Traceroute' (o tracert), ¿qué mensaje ICMP devuelve cada router intermedio al descartar el paquete?", r: ["Time Exceeded (Tiempo excedido)", "Echo Reply", "Fragmentation Needed", "Parameter Problem"], c: "Time Exceeded (Tiempo excedido)", e: "Traceroute incrementa el TTL (Time To Live) deliberadamente. Cuando un router lo decrece a cero, descarta el paquete y devuelve 'Time Exceeded', revelando así su IP." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 3: IPv6 y Enrutamiento", p: "¿En qué consiste la técnica 'Dual-Stack' referida a la migración de protocolos?", r: ["Agrupar múltiples rutas IPv4 en una sola superred.", "Ejecutar y procesar tanto IPv4 como IPv6 simultáneamente en la misma interfaz de un dispositivo.", "Dividir la dirección MAC en dos partes para calcular la IP.", "Crear dos conexiones de cable trenzado para redundancia."], c: "Ejecutar y procesar tanto IPv4 como IPv6 simultáneamente en la misma interfaz de un dispositivo.", e: "Pila doble (Dual-Stack) significa que la máquina tiene habilitadas ambas pilas y puede comunicarse indistintamente por redes IPv4 o IPv6 de forma nativa." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 3: IPv6 y Enrutamiento", p: "Dentro de IPv6, si te encuentras con la dirección comprimida `::1/128`, ¿qué función cumple?", r: ["Es el broadcast general de la red local.", "Representa la puerta de enlace por defecto (Default Gateway).", "Es la dirección de loopback local de la propia máquina.", "Es una dirección reservada para descartar tráfico (Agujero negro)."], c: "Es la dirección de loopback local de la propia máquina.", e: "La dirección ::1/128 en IPv6 equivale exactamente al loopback de localhost, siendo el reemplazo directo de la dirección 127.0.0.1 de IPv4." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 3: IPv6 y Enrutamiento", p: "Un router debe enviar un paquete muy grande, pero ve que la red de salida no lo soporta y además está marcado con DF=1. ¿Qué tipo de error ICMP enviará de vuelta al origen?", r: ["Destination Unreachable (Network Unreachable)", "Echo Reply", "Time Exceeded", "Fragmentation Needed (Destination Unreachable)"], c: "Fragmentation Needed (Destination Unreachable)", e: "El router enviará un ICMP tipo 3 (Inalcanzable) con el código de 'Se necesita fragmentación y el bit DF está activado'. Esto permite al host origen descubrir la MTU real del trayecto." },
+
+        // PARTE 4: Capa de Transporte
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 4: Capa de Transporte", p: "¿Cómo se denominan las PDU (Unidades de Datos de Protocolo) en la capa de transporte para TCP y UDP respectivamente?", r: ["TCP: Datagrama / UDP: Segmento", "TCP: Segmento / UDP: Datagrama", "TCP: Trama / UDP: Paquete", "Ambos utilizan Paquetes"], c: "TCP: Segmento / UDP: Datagrama", e: "En el nivel de transporte, el protocolo orientado a conexión TCP transporta datos en Segmentos, mientras que UDP (User Datagram Protocol) utiliza Datagramas." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 4: Capa de Transporte", p: "¿Cuál de las siguientes afirmaciones describe mejor al protocolo UDP?", r: ["Garantiza la entrega de datos en el orden correcto.", "Es un protocolo orientado a conexión.", "No cuenta con números de secuencia ni posee sistema propio de control de flujo.", "Utiliza el saludo a tres vías (3-way handshake) antes de transmitir."], c: "No cuenta con números de secuencia ni posee sistema propio de control de flujo.", e: "UDP es un protocolo ligero y no orientado a conexión. Al no verificar la entrega ni el orden, es mucho más rápido, delegando la fiabilidad a la capa de aplicación." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 4: Capa de Transporte", p: "¿Qué protocolo de la capa de aplicación utiliza UDP de forma nativa debido a su rapidez al no necesitar establecer una sesión de conexión?", r: ["FTP", "SSH", "DNS", "HTTP"], c: "DNS", e: "DNS (Domain Name System) utiliza habitualmente el puerto UDP 53 para consultas rápidas. Otros protocolos que usan UDP son DHCP, NTP y RTP." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 4: Capa de Transporte", p: "Según la IANA, ¿cuál es el rango de puertos conocidos como 'Registered Ports' (Puertos Registrados)?", r: ["0 a 1023", "1024 a 49151", "49152 a 65535", "1 a 65536"], c: "1024 a 49151", e: "Los puertos registrados van del 1024 al 49151. Los 'Well Known' (Puertos de Sistema) son del 0 al 1023, y los dinámicos/privados del 49152 al 65535." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 4: Capa de Transporte", p: "¿Qué entidad internacional se encarga globalmente de la asignación de los puertos bien conocidos (System Ports), direcciones IP y sistemas autónomos?", r: ["IEEE", "IETF", "IANA", "ITU-T"], c: "IANA", e: "La IANA (Internet Assigned Numbers Authority) es la entidad que supervisa la asignación global y el registro de direcciones IP y números de puerto." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 4: Capa de Transporte", p: "¿Cuál es el objetivo principal del 'Handshake de 3 vías' (Saludo de 3 vías) de TCP?", r: ["Cifrar la carga útil de los segmentos.", "Establecer una sesión para garantizar el sincronismo intercambiando números de secuencia.", "Asignar una dirección IP pública al cliente.", "Averiguar la dirección MAC del destinatario mediante multicast."], c: "Establecer una sesión para garantizar el sincronismo intercambiando números de secuencia.", e: "El 3-way handshake (SYN, SYN-ACK, ACK) establece y sincroniza la comunicación fiable intercambiando los números de secuencia que usarán ambos extremos." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 4: Capa de Transporte", p: "En el establecimiento de conexión TCP (Handshake), ¿qué flags de control se activan en el segundo paso, cuando el servidor responde al cliente?", r: ["SYN", "ACK", "SYN y ACK", "FIN y ACK"], c: "SYN y ACK", e: "1º El cliente envía un SYN. 2º El servidor responde con SYN-ACK confirmando la petición de inicio y enviando la suya. 3º El cliente cierra la confirmación con un ACK final." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 4: Capa de Transporte", p: "¿En qué mecanismo basa el protocolo TCP su control de flujo para no saturar al receptor?", r: ["Ventana de control deslizante (Window Size).", "Temporizador de retransmisión (RTO).", "Descubrimiento iterativo de MTU.", "Algoritmo CSMA/CD."], c: "Ventana de control deslizante (Window Size).", e: "El receptor indica en cada segmento ACK el tamaño de su ventana (Window Size). Con ello le comunica al emisor cuántos bytes está dispuesto a recibir sin llegar a desbordarse." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 4: Capa de Transporte", p: "En el mecanismo de control de congestión explícita (ECN) de TCP, ¿qué indica el flag de control ECE?", r: ["Finaliza la conexión de forma abrupta por desbordamiento.", "Notifica al emisor que debe reducir el tráfico debido a la saturación de rutas intermedias.", "Confirma que se ha reducido exitosamente el tamaño de la ventana de congestión.", "Activa el cifrado de extremo a extremo de la sesión en curso."], c: "Notifica al emisor que debe reducir el tráfico debido a la saturación de rutas intermedias.", e: "ECE (Explicit Congestion Echo) avisa de que hay congestión en la red. El receptor notifica al emisor original que los routers intermedios están saturados." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 4: Capa de Transporte", p: "Siguiendo con el mecanismo ECN de TCP, ¿cuál es la función específica del flag CWR?", r: ["Indicar Congestion Window Reduced (Ventana de congestión reducida) en respuesta a un flag ECE.", "Solicitar un reinicio urgente de la conexión (Connection Window Reset).", "Activar el control CRC de errores por desincronización.", "Aumentar temporalmente el tamaño máximo de segmento para aliviar colas."], c: "Indicar Congestion Window Reduced (Ventana de congestión reducida) en respuesta a un flag ECE.", e: "El flag CWR (Congestion Window Reduced) confirma que el emisor recibió correctamente la notificación de congestión (ECE) y, en consecuencia, ha aminorado su envío de datos." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 4: Capa de Transporte", p: "¿Qué significa exactamente el parámetro MSS (Maximum Segment Size) en TCP?", r: ["El tamaño máximo en bytes del paquete IP permitido en la red.", "El número máximo de saltos por router permitidos en la conexión.", "El número de bytes de carga útil (datos puros) que el sistema está dispuesto a recibir en un único segmento TCP.", "El tiempo máximo de espera en milisegundos antes de dar por cerrada la sesión."], c: "El número de bytes de carga útil (datos puros) que el sistema está dispuesto a recibir en un único segmento TCP.", e: "El MSS especifica la carga útil máxima del segmento excluyendo las cabeceras. Su objetivo principal es que el tamaño final encaje en la MTU subyacente para evitar la fragmentación en la capa de Red." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 4: Capa de Transporte", p: "[PRÁCTICA] ¿Cómo se calcula teóricamente el valor MSS óptimo de TCP para evitar la fragmentación IP en una red estándar Ethernet (MTU de 1500 bytes)?", r: ["MSS = MTU + Cabecera IP", "MSS = MTU - Cabecera TCP", "MSS = MTU - Cabecera IP - Cabecera TCP", "MSS = Total Length + TTL"], c: "MSS = MTU - Cabecera IP - Cabecera TCP", e: "Para que el paquete completo no supere la MTU (1500), al MSS se le deben descontar los tamaños fijos mínimos de las cabeceras IP (20 bytes) y TCP (20 bytes). Por tanto, MSS = 1500 - 20 - 20 = 1460 bytes." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 4: Capa de Transporte", p: "¿Cómo garantiza TCP fundamentalmente que los datos lleguen íntegros, fiables y en orden correcto a su destino?", r: ["Usando cifrado AES de 256 bits sobre la cabecera.", "Asignando números de secuencia y exigiendo un acuse de recibo (ACK) al receptor por cada bloque entregado.", "Utilizando el protocolo UDP como soporte auxiliar para comprobaciones rápidas.", "Enviando de manera redundante cada segmento dos veces consecutivas."], c: "Asignando números de secuencia y exigiendo un acuse de recibo (ACK) al receptor por cada bloque entregado.", e: "La fiabilidad de TCP reside en que cada byte transferido tiene un número de secuencia. El receptor responde con un ACK que valida qué secuencias ya ha recibido, solicitando retransmisión si falta alguna." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 4: Capa de Transporte", p: "¿Cuál de los siguientes términos técnicos describe a un protocolo de la capa de transporte que establece forzosamente una sesión previa antes de poder enviar carga de datos?", r: ["Protocolo Vector Distancia", "Protocolo Best-Effort", "Protocolo orientado a conexión", "Protocolo sin estado (Stateless)"], c: "Protocolo orientado a conexión", e: "TCP se define como un protocolo 'orientado a conexión' (connection-oriented) porque impone realizar el Handshake de establecimiento antes de permitir cualquier transferencia de datos útil." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 4: Capa de Transporte", p: "¿Qué combinación exacta de elementos lógicos define unívocamente a un 'Socket' en una comunicación de red TCP/IP?", r: ["Dirección MAC origen y Dirección IP origen.", "Dirección IP y Número de Puerto.", "Número de Secuencia y tamaño del Window Size.", "Dirección IP, máscara de subred y Default Gateway."], c: "Dirección IP y Número de Puerto.", e: "Un 'Socket' es el punto final de una comunicación de dos vías; se forma asociando de manera directa una dirección lógica de red (IP) con un identificador local de aplicación (Puerto)." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 4: Capa de Transporte", p: "¿Por qué protocolos de transmisión de tiempo real como RTP (Real-time Transport Protocol) utilizan UDP como base en lugar del robusto TCP?", r: ["Porque UDP permite aplicar cifrado de extremo a extremo de forma nativa en video.", "Porque UDP garantiza la entrega de frames en orden estrictamente cronológico.", "Porque la retransmisión de paquetes retrasados que hace TCP arruinaría las emisiones en directo, priorizando UDP la rapidez y el flujo constante.", "Porque UDP soporta un tamaño de ventana deslizante infinitamente superior."], c: "Porque la retransmisión de paquetes retrasados que hace TCP arruinaría las emisiones en directo, priorizando UDP la rapidez y el flujo constante.", e: "En voz IP o streaming en directo, si un paquete se retrasa o pierde, no tiene sentido retransmitirlo más tarde porque el momento de reproducir ese audio/video ya pasó. Por ello se prefiere la velocidad de UDP asumiendo pequeñas pérdidas." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 4: Capa de Transporte", p: "Durante el '3-way handshake' (saludo de tres vías), ¿qué valor lógico utilizan el emisor y el receptor como su Número de Secuencia Inicial (ISN)?", r: ["Siempre empiezan matemáticamente en 0.", "Siempre empiezan matemáticamente en 1.", "Inician la conversación con un número de secuencia completamente aleatorio por motivos de seguridad.", "Utilizan el número de puerto de destino como su número de secuencia."], c: "Inician la conversación con un número de secuencia completamente aleatorio por motivos de seguridad.", e: "Para prevenir vulnerabilidades como el 'TCP Sequence Prediction Attack' (TCP hijacking), ambos extremos eligen un número de secuencia de inicio pseudoaleatorio (ISN)." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 4: Capa de Transporte", p: "Cuando un usuario abre su navegador y solicita la web de un servidor HTTP (puerto 80), ¿qué puerto de origen suele emplear el cliente (navegador)?", r: ["Obligatoriamente el puerto 80, igual que el servidor remoto.", "Obligatoriamente el puerto 443.", "Un puerto clasificado como 'Well Known' aleatorio (0-1023).", "Un puerto dinámico, efímero o privado, encajado dentro del rango 49152 a 65535."], c: "Un puerto dinámico, efímero o privado, encajado dentro del rango 49152 a 65535.", e: "El servidor escucha en un puerto de sistema (80), pero el cliente que inicia la conexión se apropia temporalmente de un puerto de rango alto (ephemeral port) para gestionar la respuesta entrante." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 4: Capa de Transporte", p: "¿Qué sofisticado mecanismo algorítmico utiliza internamente el protocolo UDP para gestionar su control de flujo?", r: ["El sistema de ventana deslizante asíncrona.", "Los paquetes ICMP con flag de tipo Source Quench.", "El eficiente algoritmo binario de Nagle.", "Ninguno. UDP carece totalmente de sistemas propios de control de flujo."], c: "Ninguno. UDP carece totalmente de sistemas propios de control de flujo.", e: "UDP es muy básico: empaqueta los datos y los dispara sin importarle la saturación de la red ni la capacidad del receptor. Carece de control de flujo o de congestión intrínseco." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 4: Capa de Transporte", p: "Teniendo en cuenta que el servicio de nombres de dominio (DNS) requiere traducciones milisegundos, ¿qué protocolo y puerto de la capa de transporte utiliza por defecto para las resoluciones estándar de clientes?", r: ["TCP utilizando el puerto 53", "UDP utilizando el puerto 53", "TCP utilizando el puerto 67", "UDP utilizando el puerto 80"], c: "UDP utilizando el puerto 53", e: "Para peticiones normales (resolver nombre a IP) DNS prioriza usar UDP por el puerto 53 debido a su baja latencia (evita el handshake TCP). TCP 53 se reserva habitualmente para sincronización entre servidores de zonas enteras." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 4: Capa de Transporte", p: "Sabiendo que el protocolo de asignación de direcciones IP DHCP (Dynamic Host Configuration Protocol) utiliza el esquema de enviar broadcasts masivos a la red local al iniciar, ¿sobre qué protocolo de transporte opera lógicamente?", r: ["UDP", "TCP", "ICMP", "IGMP"], c: "UDP", e: "DHCP opera directamente sobre UDP (puertos 67 para el server y 68 para el cliente) ya que la máquina cliente aún carece de IP para armar conexiones TCP formales, haciendo indispensable enviar un datagrama rápido por broadcast." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 4: Capa de Transporte", p: "El novedoso protocolo de transporte QUIC (Quick UDP Internet Connections), el cual impulsa el estándar HTTP/3, ¿sobre qué infraestructura clásica está construido?", r: ["Como una variante cifrada del protocolo TCP.", "Sobre una capa subyacente puramente UDP.", "Se apoya sobre SCTP para gestionar múltiples flujos.", "Utilizando extensiones propietarias del protocolo IPsec."], c: "Sobre una capa subyacente puramente UDP.", e: "QUIC se diseñó montándose encima de UDP para evitar el excesivo retardo que impone el Handshake de establecimiento de TCP en conexiones móviles e internacionales." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 4: Capa de Transporte", p: "El temario de TAI menciona que existen otros protocolos en la capa de transporte, como el protocolo SCTP. ¿A qué hacen referencia estas siglas?", r: ["Secure Control Transport Protocol", "Stream Control Transmission Protocol", "Simple Connection Transfer Protocol", "Standard Communication Transmission Protocol"], c: "Stream Control Transmission Protocol", e: "SCTP es un protocolo moderno orientado a conexión como TCP pero capaz de agrupar transmisiones masivas e independientes de mensajes (multi-streaming), muy demandado en núcleos de redes móviles." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 4: Capa de Transporte", p: "¿En qué paquete o momento exacto del establecimiento de una conexión TCP interviene y se notifica el valor óptimo del MSS (Maximum Segment Size) de la comunicación?", r: ["Se adjunta invariablemente al finalizar la sesión con el paquete FIN.", "En las opciones del primer segmento SYN emitido en la apertura de la conexión.", "Cada vez que la aplicación advierte que ha llenado su memoria de recepción.", "Se configura forzosamente antes de enviar la primera carga útil de datos (PUSH)."], c: "En las opciones del primer segmento SYN emitido en la apertura de la conexión.", e: "Ambos extremos publican su propio límite de MSS utilizando un campo opcional alojado exclusivamente dentro de las cabeceras TCP adjuntas al intercambio inicial de los paquetes SYN." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 4: Capa de Transporte", p: "Al igual que hace la capa de Red de IPv4, tanto los protocolos TCP como UDP incluyen un campo de metadatos empleado para detectar si los bits han llegado corruptos. ¿Cuál es su denominación oficial?", r: ["CRC (Cyclic Redundancy Check)", "FCS (Frame Check Sequence)", "Checksum (Suma de verificación)", "Parity Bit (Bit de paridad)"], c: "Checksum (Suma de verificación)", e: "El campo Checksum, presente en las cabeceras tanto de TCP como de UDP, aplica sumas de control matemáticas a los bytes recibidos para determinar fehacientemente la integridad de los datos entregados y su cabecera." },
+
+        // PARTE 5: Aplicación y Repaso
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 5: Aplicación y Repaso", p: "En el protocolo FTP (File Transfer Protocol), ¿qué puerto utiliza el servidor de forma predeterminada para establecer el canal de control (comandos)?", r: ["Puerto 20", "Puerto 21", "Puerto 22", "Puerto 23"], c: "Puerto 21", e: "FTP utiliza el puerto 21 para el canal de control (por donde viajan los comandos y las respuestas) y el puerto 20 para el canal de transferencia de datos en modo activo." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 5: Aplicación y Repaso", p: "¿Qué comportamiento define al 'Modo Activo' en una transferencia FTP?", r: ["El cliente inicia la conexión de transferencia de datos hacia un puerto dinámico del servidor.", "El cliente envía el comando 'PASV' y el servidor abre la conexión.", "El cliente envía el comando 'PORT' y es el SERVIDOR quien inicia la conexión de transferencia de datos desde su puerto 20 hacia el cliente.", "El servidor utiliza el puerto 21 tanto para comandos como para datos."], c: "El cliente envía el comando 'PORT' y es el SERVIDOR quien inicia la conexión de transferencia de datos desde su puerto 20 hacia el cliente.", e: "En el modo activo, el cliente informa al servidor de qué puerto está escuchando (comando PORT), y el servidor inicia activamente la conexión de datos desde su puerto TCP 20." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 5: Aplicación y Repaso", p: "¿Cómo funciona el canal de datos en una conexión FTP en 'Modo Pasivo'?", r: ["El servidor inicia la conexión de datos desde su puerto 20.", "El cliente envía el comando 'PASV' y es el propio CLIENTE quien inicia la transferencia de datos hacia un puerto dinámico (>1023) del servidor.", "Ambos extremos negocian usar el puerto 21 multiplexado.", "Se utiliza forzosamente el puerto 22 cifrado por SSH."], c: "El cliente envía el comando 'PASV' y es el propio CLIENTE quien inicia la transferencia de datos hacia un puerto dinámico (>1023) del servidor.", e: "El modo pasivo (comando PASV) se usa habitualmente para evitar problemas con los cortafuegos (Firewalls) del cliente, haciendo que sea el cliente quien inicie también la conexión de datos." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 5: Aplicación y Repaso", p: "Si deseamos dotar de seguridad nativa a FTP encapsulándolo sobre SSL/TLS (conocido como FTPS), ¿qué puertos bien conocidos se utilizan según la IANA?", r: ["20 y 21", "22 y 23", "989 y 990", "161 y 162"], c: "989 y 990", e: "FTPS (FTP Secure) cifra el tráfico FTP utilizando SSL/TLS y emplea los puertos TCP 989 (para datos) y 990 (para control)." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 5: Aplicación y Repaso", p: "¿Qué protocolo de transferencia de archivos seguro funciona canalizado sobre el protocolo criptográfico SSH, utilizando su mismo puerto?", r: ["FTPS", "TFTP", "SFTP", "SCP"], c: "SFTP", e: "SFTP (SSH File Transfer Protocol) es un protocolo totalmente distinto a FTP; funciona sobre una sesión segura SSH utilizando el puerto TCP 22." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 5: Aplicación y Repaso", p: "En la capa de aplicación, ¿qué par de protocolos y puertos son el estándar para el envío (salida) y recepción (entrada) básica de correo electrónico?", r: ["SMTP (25) y POP3 (110)", "IMAP (143) y SMTP (110)", "POP3 (110) y FTP (21)", "SMTP (22) y SNMP (161)"], c: "SMTP (25) y POP3 (110)", e: "SMTP (Simple Mail Transfer Protocol) usa el puerto 25 para enviar correos, mientras que POP3 (Post Office Protocol version 3) usa el puerto 110 para recibirlos/descargarlos." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 5: Aplicación y Repaso", p: "Si nos basamos en las equivalencias entre el Modelo OSI y la pila TCP/IP, ¿qué protocolo de la suite TCP/IP equivale al estándar X.500 de OSI?", r: ["FTP", "LDAP", "SMTP", "SNMP"], c: "LDAP", e: "El estándar de servicios de directorio X.500 de OSI dio lugar a su equivalente ligero en TCP/IP, conocido como LDAP (Lightweight Directory Access Protocol)." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 5: Aplicación y Repaso", p: "¿A qué protocolo de TCP/IP equivale el estándar FTAM (File Transfer Access and Management) de la capa 7 del Modelo OSI?", r: ["NFS", "SMB", "FTP", "HTTP"], c: "FTP", e: "FTAM es el protocolo del Modelo OSI diseñado para el acceso y gestión de transferencia de archivos, siendo su equivalente directo en Internet el protocolo FTP." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 5: Aplicación y Repaso", p: "[REPASO MIXTO] En IPv4, ¿qué dirección está asignada al bloque reservado para autoconfiguración local o APIPA cuando falla un servidor DHCP?", r: ["10.0.0.0/8", "127.0.0.0/8", "169.254.0.0/16", "192.168.0.0/16"], c: "169.254.0.0/16", e: "La IETF reserva el bloque 169.254.0.0/16 (Link-Local de IPv4) para que los equipos se auto-asignen una IP cuando no hay un servidor DHCP disponible (APIPA en Windows)." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 5: Aplicación y Repaso", p: "[REPASO MIXTO] Un router OSPF necesita intercambiar información de enrutamiento con los demás routers de su área. ¿Qué dirección multicast IPv4 utiliza por defecto?", r: ["224.0.0.1", "224.0.0.5 y 224.0.0.6", "224.0.0.9", "255.255.255.255"], c: "224.0.0.5 y 224.0.0.6", e: "OSPF envía sus actualizaciones y mensajes Hello a los grupos multicast 224.0.0.5 (Todos los routers OSPF) y 224.0.0.6 (Solo routers designados DR/BDR)." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 5: Aplicación y Repaso", p: "[REPASO MIXTO] ¿Cuál es la dirección multicast equivalente a la que utiliza el protocolo RIPv2 para enviar sus tablas de rutas?", r: ["224.0.0.5", "224.0.0.9", "FF02::1", "224.0.0.10"], c: "224.0.0.9", e: "A diferencia de RIPv1 que usaba broadcast, RIPv2 es más eficiente y seguro al usar la dirección multicast 224.0.0.9 para hablar solo con otros routers RIP." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 5: Aplicación y Repaso", p: "[REPASO MIXTO] En la técnica del algoritmo EUI-64 para IPv6, ¿qué valores hexadecimales exactos se insertan en el centro de la dirección MAC de 48 bits?", r: ["FFFF", "FFFE", "0000", "ABCD"], c: "FFFE", e: "Para conformar los 64 bits de interface, el algoritmo EUI-64 parte la MAC a la mitad, inserta FFFE en el medio y, por último, invierte el séptimo bit contando desde la izquierda." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 5: Aplicación y Repaso", p: "[REPASO MIXTO] En IPv6, ¿qué técnica de transición asume automáticamente que si un paquete empieza por 2002::/16, en su interior contiene una red IPv4 encapsulada?", r: ["Dual-Stack", "ISATAP", "Método 6to4", "Teredo"], c: "Método 6to4", e: "El método 6to4 es un túnel automático que transmite tráfico IPv6 a través de una red troncal IPv4, y siempre concatena el prefijo 2002::/16 con la IP pública del router." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 5: Aplicación y Repaso", p: "[REPASO MIXTO] Durante una traza de red ejecutando el comando 'Traceroute', ¿qué mensaje ICMP es el que provoca que el router nos revele su existencia?", r: ["Echo Request", "Echo Reply", "Time Exceeded (Tiempo Excedido)", "Destination Unreachable"], c: "Time Exceeded (Tiempo Excedido)", e: "Traceroute manda paquetes con el campo TTL incrementando de 1 en 1. Cuando a un router le llega un paquete con TTL=1, lo baja a 0, lo descarta y envía un ICMP 'Tiempo Excedido' revelando su IP." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 5: Aplicación y Repaso", p: "[REPASO MIXTO] Al examinar un segmento TCP, el flag CWR indica que la ventana de congestión ha sido reducida. ¿Qué flag anterior debió recibir el emisor para reaccionar activando el CWR?", r: ["SYN", "FIN", "ECE (Explicit Congestion Echo)", "URG"], c: "ECE (Explicit Congestion Echo)", e: "El receptor manda un flag ECE para avisar de que los routers están sufriendo congestión. El emisor obedece reduciendo la ventana y manda CWR para confirmar que lo ha hecho." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 5: Aplicación y Repaso", p: "[REPASO MIXTO] ¿Cuál es el tamaño mínimo estricto, sin contar opciones adicionales, de una cabecera de Nivel de Red (IPv4) y de una cabecera de Nivel de Transporte (TCP)?", r: ["10 bytes y 10 bytes", "20 bytes IPv4 y 20 bytes TCP", "40 bytes IPv4 y 20 bytes TCP", "20 bytes IPv4 y 8 bytes UDP/TCP"], c: "20 bytes IPv4 y 20 bytes TCP", e: "Tanto la cabecera básica de IPv4 como la cabecera básica de TCP miden un mínimo de 20 bytes fijos cada una (total 40 bytes antes del payload de datos útiles)." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 5: Aplicación y Repaso", p: "[REPASO MIXTO] Partiendo de la red de clase C 192.168.1.0/24, si hacemos 'Subnetting' para obtener 4 subredes, ¿cuál será la nueva máscara de subred en formato CIDR?", r: ["/25", "/26", "/27", "/28"], c: "/26", e: "Para obtener 4 subredes necesitamos pedir prestados 2 bits a la porción de host (2^2 = 4). La máscara pasa de 24 bits + 2 bits = 26 bits (/26, equivalente a 255.255.255.192)." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 5: Aplicación y Repaso", p: "[REPASO MIXTO] Usando la red y submáscara de la pregunta anterior (192.168.1.0/26), ¿cuántas IPs útiles para conectar ordenadores tendremos por cada una de esas 4 subredes?", r: ["128", "64", "62", "30"], c: "62", e: "Una máscara /26 nos deja 6 bits para host (32-26). Esto da 2^6 = 64 IPs totales por bloque. Restando la dirección de red y la de broadcast quedan 62 IPs útiles por subred." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 5: Aplicación y Repaso", p: "[REPASO MIXTO] ¿Qué dirección IPv6 específica y única equivale a la función de la IP 127.0.0.1 de IPv4?", r: ["FE80::1/10", "::0/128", "::1/128", "FF02::1/8"], c: "::1/128", e: "La dirección de loopback (bucle local) en IPv6 está compuesta por 127 ceros y un uno al final, representándose comprimida como ::1." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 5: Aplicación y Repaso", p: "[REPASO MIXTO] ¿Qué protocolo de enrutamiento histórico está considerado estrictamente 'Classful', impidiendo realizar enrutamiento de subredes al no enviar las máscaras en sus actualizaciones?", r: ["RIPv2", "OSPF", "BGP", "RIPv1"], c: "RIPv1", e: "RIPv1 (Vector Distancia clásico) asume las clases fijas A, B y C de la IP; es Classful. RIPv2, OSPF y EIGRP ya son protocolos Classless." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 5: Aplicación y Repaso", p: "[REPASO MIXTO] En un entorno corporativo, ¿qué subnivel del Nivel de Enlace del modelo OSI se encarga de evitar bucles físicos en una topología de red con switches conectados redundantemente?", r: ["MAC, utilizando el protocolo CSMA/CD", "LLC, utilizando los estándares 802.2", "MAC, implementando algoritmos de Spanning Tree (STP/RSTP)", "LLC, utilizando el protocolo HDLC"], c: "MAC, implementando algoritmos de Spanning Tree (STP/RSTP)", e: "El protocolo Spanning Tree (802.1D) y sus variantes RSTP/MSTP actúan en la subcapa MAC de Nivel 2 bloqueando puertos lógicamente para evitar tormentas de broadcast causadas por bucles." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 5: Aplicación y Repaso", p: "[REPASO MIXTO] Teniendo el bloque CIDR 200.200.100.0/24 y aplicando técnicas VLSM (Máscara de longitud variable), ¿qué máscara / prefijo asignarías para un enlace punto a punto entre 2 enrutadores que requiere exactamente 2 IPs útiles?", r: ["/29", "/30", "/31", "/32"], c: "/30", e: "Un prefijo /30 proporciona 2 bits para host (2^2 = 4). Restando la IP de red y la IP de broadcast, deja exactamente 2 IPs útiles (una para cada interfaz del router punto a punto)." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 5: Aplicación y Repaso", p: "[REPASO MIXTO] Si configuramos el NAT (Traducción de Direcciones de Red) en un router con la modalidad SNAT o IP Masquerading, ¿qué campo exacto de la cabecera IP modifica el router al salir a Internet?", r: ["Modifica la Dirección IP de Origen Privada por la IP Pública del router.", "Modifica la Dirección IP de Destino por la IP local del servidor interno.", "Modifica la Dirección MAC de Origen por una MAC virtual.", "Modifica el campo Protocol para encapsularlo."], c: "Modifica la Dirección IP de Origen Privada por la IP Pública del router.", e: "En el SNAT (Source NAT), usado clásicamente para dar acceso a Internet a una LAN, el router reemplaza la IP origen privada del paquete por su propia IP origen pública." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 5: Aplicación y Repaso", p: "[REPASO MIXTO] En un entorno de red, el protocolo RDP (Escritorio Remoto de Windows) es bloqueado por defecto en la mayoría de Firewalls. ¿Qué puerto TCP se debe abrir para permitir su paso?", r: ["Puerto 445", "Puerto 3389", "Puerto 2049", "Puerto 161"], c: "Puerto 3389", e: "RDP (Remote Desktop Protocol) emplea el puerto TCP 3389. El 445 es para SMB/CIFS, el 2049 para NFS y el 161/162 para SNMP." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Parte 5: Aplicación y Repaso", p: "[REPASO MIXTO] Si una IP empieza con la sintaxis FC00:: o FD00:: en el contexto de IPv6, ¿a qué tipo de direccionamiento nos estamos refiriendo?", r: ["Direcciones públicas globales enrutables por Internet (Global Unicast).", "Direcciones locales de enlace, solo para vecinos (Link-Local).", "Direcciones únicas de uso local, equivalentes a las IPs privadas de redes corporativas (Unique-Local).", "Direcciones Multicast de difusión global."], c: "Direcciones únicas de uso local, equivalentes a las IPs privadas de redes corporativas (Unique-Local).", e: "El bloque Unique-Local (FC00::/7) es el análogo directo a los rangos IP privados de IPv4 (como 192.168.x.x o 10.x.x.x), pensados para tráfico interno de una organización." },
+
+        // Simulacro Global TCP/IP
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "¿Cuál es la PDU (Unidad de Datos de Protocolo) correspondiente al nivel de Transporte en el Modelo OSI?", r: ["Paquete", "Dato", "Trama", "Segmento"], c: "Segmento", e: "En la capa de Transporte, la unidad de datos se denomina Segmento (TCP) o Datagrama (UDP). En Red es Paquete, y en Enlace es Trama." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "¿A qué protocolo de la arquitectura TCP/IP equivale el estándar X.400 de la capa de aplicación del Modelo OSI?", r: ["FTP", "SMTP", "LDAP", "SNMP"], c: "SMTP", e: "El estándar X.400 del Modelo OSI se diseñó para el manejo de mensajería electrónica, lo que equivale a SMTP en TCP/IP." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "¿Qué puerto utiliza por defecto el protocolo RDP (Escritorio Remoto de Windows)?", r: ["3389", "22", "2049", "110"], c: "3389", e: "RDP (Remote Desktop Protocol) utiliza el puerto TCP 3389 para conexiones de escritorio remoto." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "El protocolo NTP (Network Time Protocol) se utiliza para sincronizar la hora del ordenador. ¿Qué puerto utiliza?", r: ["25", "110", "123", "520"], c: "123", e: "NTP utiliza el puerto UDP 123 para sincronizar la hora y la fecha de los sistemas en red." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "¿Cuál es el propósito principal del protocolo IGMP en la arquitectura de red?", r: ["Traducir direcciones IP a direcciones físicas MAC.", "Solicitar entrar en un grupo multicast o abandonarlo.", "Encaminar tráfico exterior entre proveedores de Internet.", "Asegurar la transferencia de ficheros mediante cifrado."], c: "Solicitar entrar en un grupo multicast o abandonarlo.", e: "IGMP (Internet Group Management Protocol) gestiona la pertenencia a grupos Multicast en IPv4." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "¿Qué dirección MAC de destino utiliza el protocolo ARP en su petición para averiguar la dirección física asociada a una IP?", r: ["00:00:00:00:00:00", "255.255.255.255", "FF:FF:FF:FF:FF:FF", "01:00:5E:00:00:01"], c: "FF:FF:FF:FF:FF:FF", e: "ARP lanza una petición mediante broadcast a nivel MAC, representada por FF:FF:FF:FF:FF:FF, para que la procesen todos los equipos del segmento." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "Según el estándar HDLC (High-Level Data Link Control), ¿cuáles son los modos de operación permitidos?", r: ["Simplex, Half-Duplex y Full-Duplex.", "CSMA/CD y CSMA/CA.", "Normal, balanceado síncrono o asíncrono.", "Estación primaria, secundaria y combinada."], c: "Normal, balanceado síncrono o asíncrono.", e: "HDLC define tres modos de operación lógicos en sus enlaces seriales: normal (NRM), asíncrono (ARM) y balanceado asíncrono (ABM)." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "Dentro de los protocolos para prevenir bucles físicos, ¿qué estándar IEEE implementa SPB (Shortest Path Bridging) para mejorar la eficiencia en centros de datos?", r: ["802.1D", "802.1s", "802.1aq", "802.1w"], c: "802.1aq", e: "El protocolo SPB se define en el estándar 802.1aq, diseñado para superar las limitaciones de STP encontrando siempre la ruta más corta." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "¿Qué estándar define el etiquetado que permite organizar de forma lógica y aislar distintas zonas de una red mediante VLANs?", r: ["802.11", "802.1w", "802.1Q", "802.3"], c: "802.1Q", e: "El estándar IEEE 802.1Q es el utilizado para el etiquetado (tagging) de redes de área local virtuales (VLAN)." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "¿Qué nombre reciben las unidades de datos (PDU) que intercambian los switches para gestionar la topología en los protocolos Spanning Tree (STP)?", r: ["Segmentos", "BPDU (Bridge Protocol Data Unit)", "LSP (Link State Packet)", "Datagramas"], c: "BPDU (Bridge Protocol Data Unit)", e: "Los switches envían y reciben BPDUs para negociar el puente raíz (Root Bridge) y bloquear puertos redundantes para evitar bucles." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "El tamaño máximo de un datagrama IPv4 viene limitado por el campo 'Total Length' de 16 bits. ¿Cuál es ese tamaño máximo total?", r: ["1500 bytes", "32768 bytes", "65535 bytes", "1024 bytes"], c: "65535 bytes", e: "Al tener 16 bits para el campo Total Length, el valor máximo matemático es 2^16 - 1, lo que da 65.535 bytes." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "¿Qué valor en el campo 'Protocol' de la cabecera IPv4 indica que se está transportando un segmento TCP?", r: ["1", "6", "17", "89"], c: "6", e: "En el campo Protocol de IPv4, el valor 6 representa a TCP, 1 a ICMP, 17 a UDP y 89 a OSPF." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "¿Cuál es la finalidad del campo TTL (Time to Live) en la cabecera de un paquete IPv4?", r: ["Definir el tiempo en milisegundos que el paquete puede estar encolado.", "Garantizar la fragmentación correcta del datagrama.", "Indicar el número máximo de saltos por routers que puede dar el paquete para evitar bucles.", "Priorizar el tráfico para aplicar Calidad de Servicio (QoS)."], c: "Indicar el número máximo de saltos por routers que puede dar el paquete para evitar bucles.", e: "El TTL evita que un paquete circule infinitamente por un bucle de enrutamiento; cada router le resta 1, y si llega a 0, se descarta enviando un ICMP Time Exceeded." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "El campo TOS de IPv4 incluye actualmente 2 bits dedicados a ECN. ¿Para qué sirven?", r: ["Para cifrar los datos del nivel de aplicación.", "Para notificar de forma explícita la congestión de la red sin necesidad de destruir/descartar los paquetes.", "Para definir la clase de direccionamiento (A, B o C).", "Para indicar el final de un paquete fragmentado."], c: "Para notificar de forma explícita la congestión de la red sin necesidad de destruir/descartar los paquetes.", e: "ECN (Explicit Congestion Notification) avisa a los sistemas extremos de que hay saturación en los routers, evitando la pérdida deliberada de paquetes para señalizar congestión." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "Según el direccionamiento Classful original, ¿a qué rango pertenece el primer octeto de una dirección de Clase B?", r: ["0 - 127", "128 - 191", "192 - 223", "224 - 239"], c: "128 - 191", e: "Los rangos del primer octeto son: Clase A (0-127), Clase B (128-191) y Clase C (192-223)." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "Si un equipo con Windows no encuentra un servidor DHCP en la red y autoconfigura su IP mediante APIPA, ¿qué bloque de direcciones utilizará?", r: ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "169.254.0.0/16"], c: "169.254.0.0/16", e: "El estándar reserva el rango Link-Local de IPv4 (169.254.0.0/16) para la autoconfiguración cuando falla la asignación dinámica (APIPA)." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "[PRÁCTICA] Dada una red IPv4, si le aplicamos la máscara de subred /26 (255.255.255.192), ¿cuántos hosts útiles podremos conectar por subred?", r: ["64", "62", "30", "126"], c: "62", e: "Una máscara /26 deja 6 bits para host (32 - 26). 2 elevado a 6 es 64. Restando la dirección de Red y la de Broadcast nos quedan 62 hosts útiles." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "[PRÁCTICA] Un equipo tiene la IP 192.168.10.50 con máscara /27. ¿Cuál es su 'Dirección de Red'?", r: ["192.168.10.0", "192.168.10.32", "192.168.10.48", "192.168.10.64"], c: "192.168.10.32", e: "La máscara /27 permite bloques de 32 IPs. Las subredes saltan: .0, .32, .64... La IP .50 cae dentro del bloque que empieza en la red 192.168.10.32." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "[PRÁCTICA] Basado en el equipo anterior (IP 192.168.10.50 /27), ¿cuál será la 'Dirección de Broadcast' de su subred?", r: ["192.168.10.63", "192.168.10.255", "192.168.10.31", "192.168.10.64"], c: "192.168.10.63", e: "Si su red empieza en .32 y la siguiente red empieza en .64, la dirección de broadcast es la inmediatamente anterior a la siguiente red: .63." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "¿Qué técnica de diseño de red permite dividir una red principal aplicando diferentes máscaras de subred simultáneamente para evitar el desperdicio de direcciones IP?", r: ["Supernetting", "FLSM", "VLSM (Variable Length Subnet Mask)", "NAT dinámico"], c: "VLSM (Variable Length Subnet Mask)", e: "VLSM permite asignar a cada subred una máscara adaptada a su tamaño real de hosts, a diferencia de FLSM que obliga a que todas las subredes sean del mismo tamaño." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "[PRÁCTICA] Si utilizamos 'Supernetting' para agrupar 4 subredes contiguas /24 en una única ruta agregada, ¿cuál será la nueva máscara de red?", r: ["/21", "/22", "/23", "/26"], c: "/22", e: "Al agrupar 4 redes se necesitan 2 bits (2^2=4). La máscara se acorta, restando esos 2 bits al prefijo original: 24 - 2 = /22." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "¿Cuál es el objetivo de la técnica SNAT (Source NAT) o 'IP Masquerading' en un router doméstico/empresarial?", r: ["Modificar el puerto de destino del paquete entrante.", "Reemplazar la IP privada de origen del cliente interno por la IP pública del router para que pueda navegar por Internet.", "Asignar IPs locales automáticamente a los ordenadores.", "Unir subredes distantes a través de un túnel VPN."], c: "Reemplazar la IP privada de origen del cliente interno por la IP pública del router para que pueda navegar por Internet.", e: "El SNAT enmascara todas las IPs privadas de la LAN detrás de una o varias IPs públicas del router hacia el exterior." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "Dentro del NAT, ¿qué técnica específica permite traducir los números de puerto para que múltiples ordenadores puedan compartir simultáneamente una sola IP pública?", r: ["DNAT", "PAT (Port Address Translation)", "SNMP", "Static NAT"], c: "PAT (Port Address Translation)", e: "PAT (o NAT Overload) usa los puertos de origen y destino para mantener una tabla de traducción, logrando que miles de sesiones internas compartan la misma IP pública." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "¿Qué protocolo de la capa de Red utiliza internamente la utilidad 'Ping' para comprobar conectividad mediante paquetes 'Echo Request' y 'Echo Reply'?", r: ["ARP", "UDP", "TCP", "ICMPv4"], c: "ICMPv4", e: "ICMP (Internet Control Message Protocol) es el protocolo auxiliar de la capa de Red encargado de la mensajería de error y diagnóstico (tipos 8 y 0 para Ping)." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "¿Cuál es el tamaño exacto en bits de una dirección IPv6?", r: ["32 bits", "64 bits", "128 bits", "256 bits"], c: "128 bits", e: "Las direcciones IPv6 miden 128 bits, y se representan clásicamente en 8 hextetos (grupos de 4 caracteres hexadecimales) separados por dos puntos (:)." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "Una de las grandes diferencias entre las cabeceras de IPv4 e IPv6 es el manejo de la fragmentación de datagramas. ¿Cómo se procesa en IPv6?", r: ["Solo la realiza el router de frontera principal.", "La realizan todos los routers del trayecto para asegurar fluidez.", "En IPv6 no existe la fragmentación bajo ninguna circunstancia.", "Solo puede ser realizada por el nodo de origen, nunca por los routers intermedios."], c: "Solo puede ser realizada por el nodo de origen, nunca por los routers intermedios.", e: "Para aligerar la carga de los routers, en IPv6 los enrutadores no fragmentan paquetes. Si es muy grande, lo descartan y el origen debe enviarlo fragmentado usando cabeceras de extensión." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "¿Qué bloque de direcciones en IPv6 cumple una función análoga a las APIPA (169.254.x.x) de IPv4, siendo válidas únicamente para el segmento de red local (Link-Local)?", r: ["2000::/3", "FE80::/10", "FC00::/7", "FF00::/8"], c: "FE80::/10", e: "El prefijo FE80::/10 identifica a las direcciones Link-Local, indispensables para descubrir vecinos y que no son enrutables por Internet." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "¿Qué prefijo IPv6 agrupa a las direcciones 'Global Unicast', que equivalen a las direcciones públicas y enrutables de Internet?", r: ["2000::/3", "FE80::/10", "FC00::/7", "::1/128"], c: "2000::/3", e: "El bloque 2000::/3 representa las direcciones Global Unicast (las IPs públicas globales de IPv6)." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "En IPv6, el concepto de 'Broadcast' clásico ha sido eliminado. ¿Qué esquema de direccionamiento se utiliza en su lugar para dirigirse a un conjunto de nodos?", r: ["Unicast Global", "Anycast estricto", "Multicast y grupos 'Solicited-Node'", "ARPv6"], c: "Multicast y grupos 'Solicited-Node'", e: "Al eliminar el Broadcast se evita saturar la red local. En IPv6 se utiliza el Multicast, haciendo que los nodos se suscriban a grupos específicos como el Solicited-Node." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "En la autoconfiguración SLAAC de IPv6 se utiliza el algoritmo EUI-64 para generar el 'Interface ID'. ¿Qué bloque hexadecimal de 16 bits se inserta en el medio de la MAC del cliente?", r: ["FFFF", "0000", "FFFE", "AAAA"], c: "FFFE", e: "El algoritmo EUI-64 parte la dirección MAC de 48 bits por la mitad, incrusta los 16 bits 'FFFE' en el centro, y finalmente invierte el séptimo bit del primer octeto." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "Dentro del protocolo de descubrimiento de vecinos NDP de IPv6, ¿qué mensaje envía periódicamente un router para anunciar el prefijo de red a todos los hosts locales?", r: ["RS (Router Solicitation)", "RA (Router Advertisement)", "NS (Neighbor Solicitation)", "NA (Neighbor Advertisement)"], c: "RA (Router Advertisement)", e: "Los Router Advertisement (RA) son mensajes multicast enviados por el router informando de su presencia, el prefijo de la red y el Gateway." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "¿Qué técnica automática de transición a IPv6 consiste en encapsular tráfico IPv6 sobre una red troncal IPv4 utilizando específicamente el prefijo reservado 2002::/16?", r: ["Dual-Stack", "NAT64", "ISATAP", "Método 6to4"], c: "Método 6to4", e: "El túnel 6to4 concatena el prefijo 2002::/16 con la IP pública IPv4 del router en hexadecimal para crear un túnel dinámico transparente." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "En enrutamiento (routing), ¿qué categoría de protocolo de pasarela interior se caracteriza por obtener una topología completa de toda la red y calcular caminos mínimos?", r: ["Vector Distancia (ej. RIP)", "Estado de Enlace o Link-State (ej. OSPF)", "Protocolo Exterior (ej. BGP)", "Protocolo Híbrido (ej. IGRP)"], c: "Estado de Enlace o Link-State (ej. OSPF)", e: "Los protocolos de Estado de Enlace (OSPF, IS-IS) envían sus estados a todos los routers del área, permitiendo armar un mapa topológico completo para aplicar algoritmos como Dijkstra." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "¿Qué protocolo de enrutamiento exterior (EGP) es el estándar global para interconectar diferentes Sistemas Autónomos (ISPs) en Internet?", r: ["BGP usando el puerto TCP 179", "OSPF usando la capa IP directa", "RIP usando el puerto UDP 520", "EIGRP usando multicast"], c: "BGP usando el puerto TCP 179", e: "BGP (Border Gateway Protocol) es el protocolo exterior por excelencia y requiere establecer sesiones TCP fiables por el puerto 179 entre los enrutadores fronterizos." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "¿Cuál de las siguientes afirmaciones describe la diferencia crucial entre RIPv1 y RIPv2?", r: ["RIPv1 permite un máximo de 32 saltos, RIPv2 permite 255.", "RIPv1 utiliza el algoritmo de Dijkstra, RIPv2 usa Vector Distancia.", "RIPv1 transmite sus tablas por Broadcast y es 'Classful', mientras que RIPv2 lo hace por Multicast (224.0.0.9) y soporta VLSM ('Classless').", "RIPv1 usa TCP por el puerto 179, RIPv2 usa UDP por el 520."], c: "RIPv1 transmite sus tablas por Broadcast y es 'Classful', mientras que RIPv2 lo hace por Multicast (224.0.0.9) y soporta VLSM ('Classless').", e: "RIPv2 mejoró enormemente la seguridad y el consumo de ancho de banda usando multicast, además de incluir la máscara de red en las actualizaciones para soportar subredes VLSM." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "¿Qué algoritmo matemático emplea OSPF (Open Shortest Path First) para procesar su base de datos topológica y hallar la ruta más corta?", r: ["Algoritmo de Bellman-Ford", "Algoritmo de Dijkstra", "Algoritmo EUI-64", "Algoritmo Spanning Tree"], c: "Algoritmo de Dijkstra", e: "El protocolo OSPF corre el algoritmo Shortest Path First (desarrollado por Dijkstra) para calcular el árbol de caminos mínimos hacia todos los destinos conocidos." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "Cuando ejecutamos el comando 'Traceroute' (o tracert) desde nuestra consola, ¿qué mensaje ICMP es el que provoca que el router nos informe de su presencia al descartar el paquete?", r: ["Echo Request", "Echo Reply", "Fragmentation Needed", "Time Exceeded (Tiempo Excedido)"], c: "Time Exceeded (Tiempo Excedido)", e: "Traceroute funciona enviando paquetes con un TTL creciente (1, 2, 3...). Al llegar a un router y agotar ese TTL (llegar a 0), el router lo descarta y avisa mediante el mensaje 'Tiempo Excedido'." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "A nivel de transporte, ¿cuál de las siguientes afirmaciones diferencia correctamente el enfoque funcional de TCP frente a UDP?", r: ["UDP incluye números de secuencia para ordenar los paquetes.", "TCP no garantiza la entrega ni el control de flujo.", "TCP es orientado a conexión (Segmentos fiables), mientras que UDP no orientado a conexión (Datagramas sin confirmación).", "Ambos protocolos requieren el Saludo de 3 vías (Handshake) para iniciar."], c: "TCP es orientado a conexión (Segmentos fiables), mientras que UDP no orientado a conexión (Datagramas sin confirmación).", e: "TCP garantiza el orden y entrega mediante un canal fiable y pesado. UDP es muy rápido (ideal para voz/video o DNS) pero no confirma si el datagrama llegó o no." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "¿Qué característica particular hace que UDP no sature a su receptor ni congestione enrutadores por voluntad propia?", r: ["Su avanzada ventana deslizante.", "Que emplea flags ECE y CWR.", "UDP carece por completo de mecanismos internos de control de flujo o control de congestión.", "Su tamaño máximo de segmento ajustable (MSS)."], c: "UDP carece por completo de mecanismos internos de control de flujo o control de congestión.", e: "UDP simplemente envía los datagramas tan rápido como se lo pide la aplicación. No implementa ninguna ventana de recepción ni avisa de congestiones." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "Según la IANA, ¿en qué rango numérico se sitúan los denominados 'Registered Ports' (Puertos Registrados)?", r: ["0 a 1023", "1024 a 49151", "49152 a 65535", "20 a 110"], c: "1024 a 49151", e: "Los 'Well Known Ports' van del 0 al 1023. Los registrados por aplicaciones van del 1024 al 49151. Y los dinámicos/efímeros abarcan del 49152 al 65535." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "Durante la fase 2 del establecimiento de sesión TCP ('3-way handshake'), ¿qué flags de control se devuelven del Servidor hacia el Cliente?", r: ["Solo SYN", "SYN y ACK", "Solo ACK", "FIN y ACK"], c: "SYN y ACK", e: "El servidor debe confirmar la petición de sincronismo del cliente (ACK) y, a su vez, enviarle su propio número de secuencia inicial (SYN) para poder tener un flujo bidireccional." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "¿En qué mecanismo se basa fundamentalmente el control de flujo de TCP para evitar enviar más datos de los que el receptor puede procesar?", r: ["Handshake de 3 vías.", "Notificación de MTU por ICMP.", "Ventana de recepción deslizante (Window Size) informada en cada ACK.", "Control de paridad bidireccional."], c: "Ventana de recepción deslizante (Window Size) informada en cada ACK.", e: "Con la 'Ventana', el receptor le dice al emisor en la cabecera TCP: 'Solo tengo espacio para X bytes'. El emisor detendrá el envío si sobrepasa esa cantidad sin recibir un nuevo aviso." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "En el control explícito de congestión de TCP, ¿qué significado tiene la aparición del flag ECE (Explicit Congestion Echo)?", r: ["Obliga a finalizar la comunicación instantáneamente.", "Informa al emisor de que debe reducir el tráfico enviado debido a la saturación experimentada en los routers de la ruta.", "Confirma que la ventana se ha reducido con éxito.", "Sincroniza los números de secuencia en medio de una sesión."], c: "Informa al emisor de que debe reducir el tráfico enviado debido a la saturación experimentada en los routers de la ruta.", e: "El ECE es el 'aviso' que da el destinatario final al origen indicándole que los enrutadores están al límite, evitando así que lleguen a descartar paquetes." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "¿Cómo se calcula teóricamente el valor MSS (Maximum Segment Size) en TCP para aprovechar el máximo de Ethernet sin tener que fragmentar a nivel de Red?", r: ["MSS = MTU - Cabecera TCP", "MSS = 1500 bytes estáticos", "MSS = MTU - Cabecera IP (20 bytes) - Cabecera TCP (20 bytes)", "MSS = Total Length - Checksum"], c: "MSS = MTU - Cabecera IP (20 bytes) - Cabecera TCP (20 bytes)", e: "Para no fragmentar, los datos útiles (MSS) más las cabeceras fijas de IP y TCP deben encajar exactos en la MTU de 1500 bytes de la capa de enlace. Por tanto, 1500 - 40 = 1460 bytes de MSS ideal." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "Al iniciar un 'Handshake' en TCP, ¿por qué los ordenadores no utilizan el número 1 o 0 para iniciar su Número de Secuencia Inicial (ISN)?", r: ["Porque consumen más ancho de banda.", "Porque inician con números totalmente aleatorios para impedir el secuestro de sesiones y predecir los ACKs (Seguridad).", "Porque esos números están reservados para los flags.", "Porque deben coincidir matemáticamente con el puerto dinámico asignado."], c: "Porque inician con números totalmente aleatorios para impedir el secuestro de sesiones y predecir los ACKs (Seguridad).", e: "Si las secuencias fuesen predecibles (empezando en 1), un atacante podría enviar paquetes falsificados fingiendo ser la IP origen (TCP Hijacking). Por eso el ISN es un número aleatorio muy grande." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "En una transferencia de ficheros mediante el protocolo FTP configurada en 'Modo Activo', ¿quién inicia el canal de transferencia de datos?", r: ["El cliente abre un puerto dinámico y espera al servidor.", "El servidor utiliza forzosamente su puerto 21 para canalizar los datos.", "El cliente manda el comando 'PORT' y es el SERVIDOR quien inicia la conexión de datos desde su puerto 20 hacia el cliente.", "El cliente manda el comando 'PASV' e inicia la conexión."], c: "El cliente manda el comando 'PORT' y es el SERVIDOR quien inicia la conexión de datos desde su puerto 20 hacia el cliente.", e: "Esta es la clave del Modo Activo: el cliente da la orden, pero 'sorprendentemente' es el servidor quien inicia proactivamente la conexión de vuelta (desde el puerto 20) hacia el cliente." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "Para proveer de confidencialidad y seguridad criptográfica pura al protocolo FTP, el estándar FTPS encapsula el tráfico sobre SSL/TLS. ¿Qué puertos utiliza por defecto esta variante?", r: ["20 y 21", "22 y 23", "989 y 990", "443 y 80"], c: "989 y 990", e: "FTPS (FTP Secure) está asignado a los puertos 989 para el canal de datos y 990 para el canal de control en modo implícito." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "Existe otra variante de transferencia segura llamada SFTP. ¿Sobre qué protocolo y puerto canaliza este sus conexiones?", r: ["Sobre SSL usando el puerto 990", "Sobre TFTP usando el puerto UDP 69", "Sobre IPsec usando el puerto 500", "Sobre el protocolo SSH utilizando el puerto TCP 22"], c: "Sobre el protocolo SSH utilizando el puerto TCP 22", e: "A pesar de llamarse SFTP (SSH File Transfer Protocol), no es FTP. Es una extensión directa del protocolo Secure Shell (SSH) y opera íntegramente sobre el puerto 22." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "¿Qué protocolos y puertos son el estándar absoluto de facto para enviar correo saliente y para descargar/recibir correo entrante respectivamente?", r: ["SMTP (25) salida y POP3 (110) entrada.", "SNMP (161) salida y IMAP (143) entrada.", "POP3 (110) salida y SMTP (25) entrada.", "FTP (21) salida y DNS (53) entrada."], c: "SMTP (25) salida y POP3 (110) entrada.", e: "El envío entre servidores de mail siempre usa SMTP por el puerto 25. Para descargar correos al cliente tradicionalmente se usa POP3 por el 110 (o alternativamente IMAP por el 143)." },
+        { m: "BLOQUE 4: Sistemas y Comunicaciones", t: "TCP/IP", u: "Simulacro Global (50 Preguntas)", p: "El protocolo LDAP es la pieza fundamental para gestionar directorios de red (ej. Active Directory). ¿A qué pesado estándar original de la capa 7 del Modelo OSI sustituyó y equivale?", r: ["X.400", "X.500", "FTAM", "CMIS/CMIP"], c: "X.500", e: "El estándar OSI X.500 definía los servicios de directorio de forma muy compleja. LDAP (Lightweight Directory Access Protocol) nació como la alternativa ligera y práctica para TCP/IP." }
+
+    ];
+
+    // ==========================================
+    // VARIABLES GLOBALES
+    // ==========================================
+    let currentQuestions = [];
+    let answeredStatus = {};
+    let startTime, timerInterval;
+    let selectedSubject = "";
+    let selectedCategory = "";
+    let selectedTopicName = "";
+
+    // ==========================================
+    // INICIALIZACIÓN Y CREACIÓN DEL MENÚ
+    // ==========================================
+    window.onload = function() {
+        const container = document.getElementById('subjects-container');
+        container.innerHTML = ''; // Limpiar el contenedor para evitar duplicados al recargar
+        
+        const subjects = [...new Set(misPreguntas.map(q => q.m))];
+        const completedTests = JSON.parse(localStorage.getItem('completed_tests_v5') || '[]');
+        
+        subjects.forEach(subject => {
+            const subjectQuestions = misPreguntas.filter(q => q.m === subject);
+            const categories = [...new Set(subjectQuestions.map(q => q.t))];
+            
+            const subjectDiv = document.createElement('div');
+            subjectDiv.className = 'subject-block';
+            
+            const title = document.createElement('h2');
+            title.className = 'subject-title';
+            title.innerHTML = ` 📘 ${subject}`;
+            subjectDiv.appendChild(title);
+            
+            const grid = document.createElement('div');
+            grid.className = 'topics-grid';
+            
+            categories.forEach(category => {
+                const categoryQuestions = subjectQuestions.filter(q => q.t === category);
+                const topics = [...new Set(categoryQuestions.map(q => q.u))];
+                
+                if (topics.length === 1) {
+                    const btn = document.createElement('button');
+                    btn.className = 'topic-card';
+                    const testId = `${subject}-${category}-${topics[0]}`;
+                    btn.setAttribute('data-testid', testId);
+                    
+                    if (completedTests.includes(testId)) {
+                        btn.innerText = `${category} ✅ `;
+                        btn.style.background = '#27ae60';
+                    } else {
+                        btn.innerText = category;
+                    }
+                    
+                    btn.onclick = () => startTest(subject, category, topics[0]);
+                    btn.oncontextmenu = (e) => { e.preventDefault(); uncheckTest(testId); };
+                    grid.appendChild(btn);
+                } else {
+                    const wrapper = document.createElement('div');
+                    wrapper.style.display = "flex";
+                    wrapper.style.flexDirection = "column";
+                    wrapper.style.gap = "10px";
+                    
+                    const btnCat = document.createElement('button');
+                    btnCat.className = 'topic-card';
+                    btnCat.style.background = 'var(--primary)';
+                    btnCat.innerHTML = ` 📂 ${category} ▼ `;
+                    
+                    const subGrid = document.createElement('div');
+                    subGrid.style.display = 'none';
+                    subGrid.style.gridTemplateColumns = 'repeat(auto-fit, minmax(140px, 1fr))';
+                    subGrid.style.gap = '10px';
+                    subGrid.style.padding = '15px';
+                    subGrid.style.background = '#e1e8ed';
+                    subGrid.style.borderRadius = '8px';
+                    
+                    btnCat.onclick = () => {
+                        if (subGrid.style.display === 'none') {
+                            subGrid.style.display = 'grid';
+                            btnCat.innerHTML = ` 📂 ${category} ▲ `;
+                        } else {
+                            subGrid.style.display = 'none';
+                            btnCat.innerHTML = ` 📂 ${category} ▼ `;
+                        }
+                    };
+                    
+                    topics.forEach(topic => {
+                        const btnTop = document.createElement('button');
+                        btnTop.className = 'topic-card';
+                        btnTop.style.fontSize = '1rem';
+                        btnTop.style.padding = '10px';
+                        
+                        const testId = `${subject}-${category}-${topic}`;
+                        btnTop.setAttribute('data-testid', testId);
+                        
+                        if (completedTests.includes(testId)) {
+                            btnTop.innerText = `${topic} ✅ `;
+                            btnTop.style.background = '#27ae60';
+                        } else {
+                            btnTop.innerText = topic;
+                        }
+                        
+                        btnTop.onclick = () => startTest(subject, category, topic);
+                        btnTop.oncontextmenu = (e) => { e.preventDefault(); uncheckTest(testId); };
+                        subGrid.appendChild(btnTop);
+                    });
+                    
+                    const btnAll = document.createElement('button');
+                    btnAll.className = 'topic-card';
+                    btnAll.style.fontSize = '1rem';
+                    btnAll.style.padding = '10px';
+                    btnAll.style.background = 'var(--primary)';
+                    
+                    const allId = `${subject}-${category}-Todos`;
+                    btnAll.setAttribute('data-testid', allId);
+                    
+                    if (completedTests.includes(allId)) {
+                        btnAll.innerText = `Todo el bloque ✅ `;
+                        btnAll.style.background = '#27ae60';
+                    } else {
+                        btnAll.innerText = `Todo el bloque`;
+                    }
+                    
+                    btnAll.onclick = () => startTest(subject, category, 'Todos');
+                    btnAll.oncontextmenu = (e) => { e.preventDefault(); uncheckTest(allId); };
+                    subGrid.appendChild(btnAll);
+                    
+                    wrapper.appendChild(btnCat);
+                    wrapper.appendChild(subGrid);
+                    grid.appendChild(wrapper);
+                }
+            });
+            
+            const btnSubjectAll = document.createElement('button');
+            btnSubjectAll.className = 'topic-card topic-all';
+            
+            const subjAllId = `${subject}-Global-Todos`;
+            btnSubjectAll.setAttribute('data-testid', subjAllId);
+            
+            if (completedTests.includes(subjAllId)) {
+                btnSubjectAll.innerText = `Toda la materia ✅ `;
+                btnSubjectAll.style.background = '#27ae60';
+            } else {
+                btnSubjectAll.innerText = `Toda la materia`;
+            }
+            
+            btnSubjectAll.onclick = () => startTest(subject, 'Global', 'Todos');
+            btnSubjectAll.oncontextmenu = (e) => { e.preventDefault(); uncheckTest(subjAllId); };
+            grid.appendChild(btnSubjectAll);
+            
+            subjectDiv.appendChild(grid);
+            container.appendChild(subjectDiv);
+        });
+        
+        // Mostrar número de preguntas falladas al cargar el menú
+        updateFailedCount();
+    };
+
+    function uncheckTest(testId) {
+        if(confirm(`¿Quieres quitar el check de completado de este tema?`)) {
+            let completed = JSON.parse(localStorage.getItem('completed_tests_v5') || '[]');
+            completed = completed.filter(id => id !== testId);
+            localStorage.setItem('completed_tests_v5', JSON.stringify(completed));
+            window.onload(); 
+        }
+    }
+
+    // ==========================================
+    // CONTROL DEL BOTÓN "ATRÁS" DEL MÓVIL/NAVEGADOR
+    // ==========================================
+    history.replaceState({page: 'menu'}, "Menú", "");
+
+    window.addEventListener('popstate', function(event) {
+        if (event.state && event.state.page === 'menu') {
+            document.getElementById('results-section').style.display = 'none';
+            document.getElementById('test-section').style.display = 'none';
+            document.getElementById('login-section').style.display = 'block';
+            if (typeof timerInterval !== 'undefined') clearInterval(timerInterval);
+            updateCheckmarks();
+            updateFailedCount();
+            window.scrollTo(0,0);
+        }
+    });
+
+    // ==========================================
+    // FUNCIONES DE LÓGICA DEL TEST
+    // ==========================================
+    function startTest(subject, category, topic) {
+        selectedSubject = subject;
+        selectedCategory = category;
+        selectedTopicName = topic;
+        
+        if (category === 'Global') {
+            document.getElementById('display-topic').innerText = `${subject} (Test Global)`;
+            currentQuestions = misPreguntas.filter(q => q.m === subject);
+        } else if (topic === 'Todos') {
+            document.getElementById('display-topic').innerText = `${subject} - ${category}`;
+            currentQuestions = misPreguntas.filter(q => q.m === subject && q.t === category);
+        } else {
+            let isSimple = misPreguntas.filter(q => q.m === subject && q.t === category).map(q => q.u).length === 1;
+            document.getElementById('display-topic').innerText = isSimple ? `${subject} - ${category}` : `${subject} - ${topic}`;
+            currentQuestions = misPreguntas.filter(q => q.m === subject && q.t === category && q.u === topic);
+        }
+        
+        document.getElementById('login-section').style.display = 'none';
+        document.getElementById('test-section').style.display = 'block';
+        
+        // Empujamos el estado al historial para que el botón "Atrás" físico del móvil funcione
+        history.pushState({page: 'test'}, "Test", "");
+        
+        startTime = new Date();
+        timerInterval = setInterval(updateTimer, 1000);
+        
+        shuffleArray(currentQuestions);
+        renderAllQuestions();
+        
+        window.scrollTo(0,0);
+    }
+
+    function updateTimer() {
+        const diff = Math.floor((new Date() - startTime) / 1000);
+        document.getElementById('timer').innerText = ` ⏱️  ${Math.floor(diff / 60).toString().padStart(2, '0')}:${(diff % 60).toString().padStart(2, '0')}`;
+    }
+
+    function renderAllQuestions() {
+        const container = document.getElementById('questions-list');
+        container.innerHTML = '';
+        answeredStatus = {};
+        
+        currentQuestions.forEach((q, index) => {
+            let options = [...q.r];
+            shuffleArray(options);
+            
+            const qBlock = document.createElement('div');
+            qBlock.className = 'question-block';
+            
+            const qText = document.createElement('div');
+            qText.className = 'question-text';
+            qText.innerText = `${index + 1}/${currentQuestions.length}. ${q.p}`;
+            qBlock.appendChild(qText);
+            
+            const optionsContainer = document.createElement('div');
+            optionsContainer.className = 'options-container';
+            optionsContainer.id = `options-${index}`;
+            
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = opt;
+                // Pasamos q.p para guardar la pregunta si la falla
+                btn.onclick = function() { checkAnswer(this, index, opt, q.c, q.e, q.p); };
+                optionsContainer.appendChild(btn);
+            });
+            
+            qBlock.appendChild(optionsContainer);
+            
+            const expl = document.createElement('div');
+            expl.id = `explanation-${index}`;
+            expl.className = 'explanation';
+            qBlock.appendChild(expl);
+            
+            container.appendChild(qBlock);
+        });
+    }
+
+    function checkAnswer(btn, index, selected, correct, info, questionText) {
+        if (answeredStatus[index] !== undefined) return;
+        const optionsContainer = document.getElementById(`options-${index}`);
+        const buttons = optionsContainer.querySelectorAll('.option-btn');
+        buttons.forEach(b => b.disabled = true);
+        
+        let failedQuestions = JSON.parse(localStorage.getItem('preguntas_falladas') || '[]');
+        
+        if (selected === correct) {
+            btn.classList.add('correct');
+            answeredStatus[index] = true;
+            
+            // Si la acierta y estaba en los fallos, la borramos
+            if (failedQuestions.includes(questionText)) {
+                failedQuestions = failedQuestions.filter(q => q !== questionText);
+                localStorage.setItem('preguntas_falladas', JSON.stringify(failedQuestions));
+                updateFailedCount();
+            }
+        } else {
+            btn.classList.add('wrong');
+            answeredStatus[index] = false;
+            buttons.forEach(b => {
+                if(b.innerText === correct) b.classList.add('correct');
+            });
+            
+            // Si la falla y NO estaba ya en la lista, la guardamos
+            if (!failedQuestions.includes(questionText)) {
+                failedQuestions.push(questionText);
+                localStorage.setItem('preguntas_falladas', JSON.stringify(failedQuestions));
+                updateFailedCount();
+            }
+        }
+        
+        if (info && info.trim() !== "") {
+            const eb = document.getElementById(`explanation-${index}`);
+            eb.innerHTML = `<strong> 💡 Aclaración:</strong> ${info}`;
+            eb.style.display = 'block';
+        }
+    }
+
+    function finishTest() {
+        const totalQuestions = currentQuestions.length;
+        const totalAnswered = Object.keys(answeredStatus).length;
+        
+        if (totalAnswered < totalQuestions) {
+            if (!confirm(`Has respondido ${totalAnswered} de ${totalQuestions} preguntas. ¿Seguro que quieres finalizar el test?`)) {
+                return;
+            }
+        }
+        
+        clearInterval(timerInterval);
+        document.getElementById('test-section').style.display = 'none';
+        
+        let correctCount = 0;
+        let incorrectCount = 0;
+        Object.values(answeredStatus).forEach(v => {
+            if (v) correctCount++;
+            else incorrectCount++;
+        });
+        
+        let percentage = (correctCount / totalQuestions) * 100;
+        let successColor = getComputedStyle(document.documentElement).getPropertyValue('--success').trim();
+        let errorColor = getComputedStyle(document.documentElement).getPropertyValue('--error').trim();
+        
+        document.getElementById('gauge-chart').style.background = `conic-gradient(${successColor} ${percentage}%, ${errorColor} 0)`;
+        document.getElementById('score-text').innerText = `${correctCount}/${totalQuestions}`;
+        
+        document.getElementById('results-detail-text').innerHTML = `Has acertado <strong><span style="color: var(--success);">${correctCount}</span></strong> y fallado <strong><span style="color: var(--error);">${incorrectCount}</span></strong> de un total de ${totalQuestions} preguntas.`;
+        
+        document.getElementById('results-section').style.display = 'block';
+        
+        let completed = JSON.parse(localStorage.getItem('completed_tests_v5') || '[]');
+        let currentTestId = `${selectedSubject}-${selectedCategory}-${selectedTopicName}`;
+        
+        // No marcamos check verde si es el test de Fallos
+        if (selectedCategory !== "Fallos" && !completed.includes(currentTestId)) {
+            completed.push(currentTestId);
+            localStorage.setItem('completed_tests_v5', JSON.stringify(completed));
+        }
+        
+        window.scrollTo(0,0);
+    }
+
+    function resetProgress() {
+        if(confirm("¿Seguro que quieres borrar todo tu progreso? Esto quitará todos los ✅ y vaciará tu lista de fallos.")) {
+            localStorage.removeItem('completed_tests_v5');
+            localStorage.removeItem('preguntas_falladas');
+            window.onload(); 
+        }
+    }
+
+    function shuffleArray(a) {
+        for (let i = a.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [a[i], a[j]] = [a[j], a[i]];
+        }
+    }
+
+    function updateCheckmarks() {
+        const completedTests = JSON.parse(localStorage.getItem('completed_tests_v5') || '[]');
+        document.querySelectorAll('.topic-card').forEach(btn => {
+            const testId = btn.getAttribute('data-testid');
+            if (testId && completedTests.includes(testId) && !btn.innerText.includes('✅')) {
+                btn.innerText = btn.innerText + ' ✅ ';
+                btn.style.background = '#27ae60';
+            }
+        });
+    }
+
+    // ==========================================
+    // FUNCIÓN PARA EL BOTÓN "VOLVER"
+    // ==========================================
+    function goBackToMenu() {
+        // Simula presionar el botón de atrás del móvil o navegador
+        history.back();
+    }
+
+    // ==========================================
+    // NUEVAS FUNCIONES: REPASAR FALLOS
+    // ==========================================
+    function startFailedQuestionsTest() {
+        let failedQuestions = JSON.parse(localStorage.getItem('preguntas_falladas') || '[]');
+        
+        if (failedQuestions.length === 0) {
+            alert("¡Enhorabuena! 🎉 No tienes ninguna pregunta fallada pendiente de repasar.");
+            return;
+        }
+
+        selectedSubject = "Repaso General";
+        selectedCategory = "Fallos";
+        selectedTopicName = "Todos";
+        
+        document.getElementById('display-topic').innerText = `Repaso de Preguntas Falladas`;
+        
+        // Filtramos para sacar las preguntas que están guardadas como fallidas
+        currentQuestions = misPreguntas.filter(q => failedQuestions.includes(q.p));
+        
+        document.getElementById('login-section').style.display = 'none';
+        document.getElementById('test-section').style.display = 'block';
+        
+        history.pushState({page: 'test'}, "Test", "");
+        
+        startTime = new Date();
+        timerInterval = setInterval(updateTimer, 1000);
+        
+        shuffleArray(currentQuestions);
+        renderAllQuestions();
+        
+        window.scrollTo(0,0);
+    }
+
+    function updateFailedCount() {
+        let failedQuestions = JSON.parse(localStorage.getItem('preguntas_falladas') || '[]');
+        let countSpan = document.getElementById('failed-count');
+        if(countSpan) countSpan.innerText = failedQuestions.length;
+    }
+</script>
+</body>
+</html>
